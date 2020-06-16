@@ -64,11 +64,19 @@ class Offer
         return $this->uuid;
     }
 
+    /**
+     * @return Partner|null
+     */
     public function getPartner(): ?Partner
     {
         return $this->partner;
     }
 
+    /**
+     * @param Partner|null $partner
+     *
+     * @return $this
+     */
     public function setPartner(?Partner $partner): self
     {
         $this->partner = $partner;
@@ -76,11 +84,19 @@ class Offer
         return $this;
     }
 
+    /**
+     * @return Product|null
+     */
     public function getProduct(): ?Product
     {
         return $this->product;
     }
 
+    /**
+     * @param Product|null $product
+     *
+     * @return $this
+     */
     public function setProduct(?Product $product): self
     {
         $this->product = $product;
@@ -88,11 +104,19 @@ class Offer
         return $this;
     }
 
+    /**
+     * @return \DateTimeImmutable|null
+     */
     public function getCreationDate(): ?\DateTimeImmutable
     {
         return $this->creationDate;
     }
 
+    /**
+     * @param \DateTimeImmutable $creationDate
+     *
+     * @return $this
+     */
     public function setCreationDate(\DateTimeImmutable $creationDate): self
     {
         $this->creationDate = $creationDate;

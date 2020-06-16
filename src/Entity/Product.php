@@ -70,6 +70,13 @@ class Product
     private $price;
 
     /**
+     * @var Collection|Offer[]
+     *
+     * @ORM\OneToMany(targetEntity=Offer::class, mappedBy="product", cascade={"persist", "remove"}, orphanRemoval=true)
+     */
+    private $offers;
+
+    /**
      * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable")
@@ -82,13 +89,6 @@ class Product
      * @ORM\Column(type="datetime_immutable", nullable=true)
      */
     private $updateDate;
-
-    /**
-     * @var Collection|Offer[]
-     *
-     * @ORM\OneToMany(targetEntity=Offer::class, mappedBy="product", cascade={"persist", "remove"}, orphanRemoval=true)
-     */
-    private $offers;
 
     /**
      * Product constructor.
@@ -228,46 +228,6 @@ class Product
     }
 
     /**
-     * @return \DateTimeImmutable|null
-     */
-    public function getCreationDate(): ?\DateTimeImmutable
-    {
-        return $this->creationDate;
-    }
-
-    /**
-     * @param \DateTimeImmutable $creationDate
-     *
-     * @return $this
-     */
-    public function setCreationDate(\DateTimeImmutable $creationDate): self
-    {
-        $this->creationDate = $creationDate;
-
-        return $this;
-    }
-
-    /**
-     * @return \DateTimeImmutable|null
-     */
-    public function getUpdateDate(): ?\DateTimeImmutable
-    {
-        return $this->updateDate;
-    }
-
-    /**
-     * @param \DateTimeImmutable|null $updateDate
-     *
-     * @return $this
-     */
-    public function setUpdateDate(?\DateTimeImmutable $updateDate): self
-    {
-        $this->updateDate = $updateDate;
-
-        return $this;
-    }
-
-    /**
      * @return Collection|Offer[]
      */
     public function getOffers(): Collection
@@ -304,6 +264,46 @@ class Product
                 $offer->setProduct(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return \DateTimeImmutable|null
+     */
+    public function getCreationDate(): ?\DateTimeImmutable
+    {
+        return $this->creationDate;
+    }
+
+    /**
+     * @param \DateTimeImmutable $creationDate
+     *
+     * @return $this
+     */
+    public function setCreationDate(\DateTimeImmutable $creationDate): self
+    {
+        $this->creationDate = $creationDate;
+
+        return $this;
+    }
+
+    /**
+     * @return \DateTimeImmutable|null
+     */
+    public function getUpdateDate(): ?\DateTimeImmutable
+    {
+        return $this->updateDate;
+    }
+
+    /**
+     * @param \DateTimeImmutable|null $updateDate
+     *
+     * @return $this
+     */
+    public function setUpdateDate(?\DateTimeImmutable $updateDate): self
+    {
+        $this->updateDate = $updateDate;
 
         return $this;
     }

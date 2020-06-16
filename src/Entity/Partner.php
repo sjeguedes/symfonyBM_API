@@ -113,11 +113,19 @@ class Partner
         return $this->uuid;
     }
 
+    /**
+     * @return string|null
+     */
     public function getType(): ?string
     {
         return $this->type;
     }
 
+    /**
+     * @param string $type
+     *
+     * @return $this
+     */
     public function setType(string $type): self
     {
         $this->type = $type;
@@ -125,11 +133,19 @@ class Partner
         return $this;
     }
 
+    /**
+     * @return string|null
+     */
     public function getName(): ?string
     {
         return $this->name;
     }
 
+    /**
+     * @param string $name
+     *
+     * @return $this
+     */
     public function setName(string $name): self
     {
         $this->name = $name;
@@ -137,11 +153,19 @@ class Partner
         return $this;
     }
 
+    /**
+     * @return string|null
+     */
     public function getEmail(): ?string
     {
         return $this->email;
     }
 
+    /**
+     * @param string $email
+     *
+     * @return $this
+     */
     public function setEmail(string $email): self
     {
         $this->email = $email;
@@ -149,50 +173,62 @@ class Partner
         return $this;
     }
 
-    public function getPassword(): ?string
+    /**
+     * @return string|null
+     */
+    public function getEncodedPassword(): ?string
     {
-        return $this->password;
+        return $this->encodedPassword;
     }
 
-    public function setPassword(string $password): self
+    /**
+     * @param string $encodedPassword
+     *
+     * @return $this
+     */
+    public function setEncodedPassword(string $encodedPassword): self
     {
-        $this->password = $password;
+        $this->encodedPassword = $encodedPassword;
 
         return $this;
     }
 
-    public function getRoles(): ?string
+    /**
+     * @return string|null
+     */
+    public function getPlainPassword(): ?string
+    {
+        return $this->plainPassword;
+    }
+
+    /**
+     * @param string $plainPassword
+     *
+     * @return $this
+     */
+    public function setPlainPassword(string $plainPassword): self
+    {
+        $this->plainPassword = $plainPassword;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getRoles(): array
     {
         return $this->roles;
     }
 
-    public function setRoles(string $roles): self
+    /**
+     * @param array $roles
+     *
+     * @return $this
+     */
+    public function setRoles(array $roles): self
     {
         $this->roles = $roles;
-
-        return $this;
-    }
-
-    public function getCreationDate(): ?\DateTimeImmutable
-    {
-        return $this->creationDate;
-    }
-
-    public function setCreationDate(\DateTimeImmutable $creationDate): self
-    {
-        $this->creationDate = $creationDate;
-
-        return $this;
-    }
-
-    public function getUpdateDate(): ?\DateTimeImmutable
-    {
-        return $this->updateDate;
-    }
-
-    public function setUpdateDate(?\DateTimeImmutable $updateDate): self
-    {
-        $this->updateDate = $updateDate;
 
         return $this;
     }
@@ -205,6 +241,11 @@ class Partner
         return $this->offers;
     }
 
+    /**
+     * @param Offer $offer
+     *
+     * @return $this
+     */
     public function addOffer(Offer $offer): self
     {
         if (!$this->offers->contains($offer)) {
@@ -215,6 +256,11 @@ class Partner
         return $this;
     }
 
+    /**
+     * @param Offer $offer
+     *
+     * @return $this
+     */
     public function removeOffer(Offer $offer): self
     {
         if ($this->offers->contains($offer)) {
@@ -236,6 +282,11 @@ class Partner
         return $this->clients;
     }
 
+    /**
+     * @param Client $client
+     *
+     * @return $this
+     */
     public function addClient(Client $client): self
     {
         if (!$this->clients->contains($client)) {
@@ -246,6 +297,11 @@ class Partner
         return $this;
     }
 
+    /**
+     * @param Client $client
+     *
+     * @return $this
+     */
     public function removeClient(Client $client): self
     {
         if ($this->clients->contains($client)) {
@@ -255,6 +311,46 @@ class Partner
                 $client->setPartner(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return \DateTimeImmutable|null
+     */
+    public function getCreationDate(): ?\DateTimeImmutable
+    {
+        return $this->creationDate;
+    }
+
+    /**
+     * @param \DateTimeImmutable $creationDate
+     *
+     * @return $this
+     */
+    public function setCreationDate(\DateTimeImmutable $creationDate): self
+    {
+        $this->creationDate = $creationDate;
+
+        return $this;
+    }
+
+    /**
+     * @return \DateTimeImmutable|null
+     */
+    public function getUpdateDate(): ?\DateTimeImmutable
+    {
+        return $this->updateDate;
+    }
+
+    /**
+     * @param \DateTimeImmutable|null $updateDate
+     *
+     * @return $this
+     */
+    public function setUpdateDate(?\DateTimeImmutable $updateDate): self
+    {
+        $this->updateDate = $updateDate;
 
         return $this;
     }
