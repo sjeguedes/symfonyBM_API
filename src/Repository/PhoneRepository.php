@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Entity\Product;
+use App\Entity\Phone;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * Class ProductRepository.
+ * Class PhoneRepository
  */
-class ProductRepository extends ServiceEntityRepository
+class PhoneRepository extends ServiceEntityRepository
 {
     /**
-     * ProductRepository constructor.
+     * PhoneRepository constructor.
      *
      * @param ManagerRegistry $registry
      */
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, Product::class);
+        parent::__construct($registry, Phone::class);
     }
 }

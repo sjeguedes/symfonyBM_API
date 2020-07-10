@@ -10,15 +10,33 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
+use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\User\UserProviderInterface;
 
 /**
- * Class Partner.
+ * Class Partner
  *
  * @ORM\Entity(repositoryClass=PartnerRepository::class)
  * @ORM\Table(name="partners")
  */
-class Partner
+class Partner implements UserInterface
 {
+    /**
+     * Define a partner default role.
+     */
+    const DEFAULT_PARTNER_ROLE = 'ROLE_API_CONSUMER';
+
+    /**
+    * Define a set of partner status.
+    */
+    const PARTNER_TYPES = [
+        'magasin',
+        'spécialiste téléphonique',
+        'vente en ligne'
+    ];
+
     /**
      * @var UuidInterface
      *
@@ -39,21 +57,21 @@ class Partner
      *
      * @ORM\Column(type="string", length=45)
      */
-    private $name;
+    private $username;
 
     /**
      * @var string
      *
-     * @ORM\Column(type="string", length=320)
+     * @ORM\Column(type="string", length=320, unique=true)
      */
     private $email;
 
     /**
      * @var string
      *
-     * @ORM\Column(type="string", length=60)
+     * @ORM\Column(type="string", length=98, unique=true)
      */
-    private $encodedPassword;
+    private $password;
 
     /**
      * @var string
@@ -136,9 +154,9 @@ class Partner
     /**
      * @return string|null
      */
-    public function getName(): ?string
+    public function getUsername(): ?string
     {
-        return $this->name;
+        return $this->username;
     }
 
     /**
@@ -146,9 +164,9 @@ class Partner
      *
      * @return $this
      */
-    public function setName(string $name): self
+    public function setUsername(string $name): self
     {
-        $this->name = $name;
+        $this->username = $name;
 
         return $this;
     }
@@ -174,21 +192,21 @@ class Partner
     }
 
     /**
-     * @return string|null
+     * {@inheritDoc}
      */
-    public function getEncodedPassword(): ?string
+    public function getPassword(): ?string
     {
-        return $this->encodedPassword;
+        return $this->password;
     }
 
     /**
-     * @param string $encodedPassword
+     * @param string $password
      *
      * @return $this
      */
-    public function setEncodedPassword(string $encodedPassword): self
+    public function setPassword(string $password): self
     {
-        $this->encodedPassword = $encodedPassword;
+        $this->password = $password;
 
         return $this;
     }
@@ -214,11 +232,14 @@ class Partner
     }
 
     /**
-     * @return array
+     * {@inheritDoc}
      */
     public function getRoles(): array
     {
-        return $this->roles;
+        // Guarantee at least one role for every userS
+        $this->roles[] = Partner::DEFAULT_PARTNER_ROLE;
+
+        return array_unique($this->roles);
     }
 
     /**
@@ -353,5 +374,21 @@ class Partner
         $this->updateDate = $updateDate;
 
         return $this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getSalt(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function eraseCredentials(): void
+    {
+        $this->plainPassword = null;
     }
 }

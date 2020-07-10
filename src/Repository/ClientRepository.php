@@ -9,7 +9,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * Class ClientRepository.
+ * Class ClientRepository
  */
 class ClientRepository extends ServiceEntityRepository
 {

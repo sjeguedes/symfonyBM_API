@@ -10,13 +10,25 @@ use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 /**
- * Class Client.
+ * Class Client
  *
  * @ORM\Entity(repositoryClass=ClientRepository::class)
  * @ORM\Table(name="clients")
  */
 class Client
 {
+    const INDIVIDUAL_TYPE = 'particulier';
+
+    const PROFESSIONAL_TYPE = 'professionnel';
+
+    /**
+     * Define a set of client status.
+     */
+    const CLIENT_TYPES = [
+        self::INDIVIDUAL_TYPE,
+        self::PROFESSIONAL_TYPE
+    ];
+
     /**
      * @var UuidInterface
      *
@@ -42,7 +54,7 @@ class Client
     /**
      * @var string
      *
-     * @ORM\Column(type="string", length=320)
+     * @ORM\Column(type="string", length=320, unique=true)
      */
     private $email;
 
@@ -50,7 +62,7 @@ class Client
      * @var Partner
      *
      * @ORM\ManyToOne(targetEntity=Partner::class, inversedBy="clients")
-     * @ORM\JoinColumn(name="partner_uuid", referencedColumnName="uuid", unique=true, nullable=false)
+     * @ORM\JoinColumn(name="partner_uuid", referencedColumnName="uuid", nullable=false)
      */
     private $partner;
 

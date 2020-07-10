@@ -10,7 +10,7 @@ use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 /**
- * Class Offer.
+ * Class Offer
  *
  * @ORM\Entity(repositoryClass=OfferRepository::class)
  * @ORM\Table(name="offers")
@@ -29,17 +29,17 @@ class Offer
      * @var Partner
      *
      * @ORM\ManyToOne(targetEntity=Partner::class, inversedBy="offers")
-     * @ORM\JoinColumn(name="partner_uuid", referencedColumnName="uuid", unique=true)
+     * @ORM\JoinColumn(name="partner_uuid", referencedColumnName="uuid")
      */
     private $partner;
 
     /**
-     * @var Product
+     * @var Phone
      *
-     * @ORM\ManyToOne(targetEntity=Product::class, inversedBy="offers")
-     * @ORM\JoinColumn(name="product_uuid", referencedColumnName="uuid", unique=true)
+     * @ORM\ManyToOne(targetEntity=Phone::class, inversedBy="offers")
+     * @ORM\JoinColumn(name="phone_uuid", referencedColumnName="uuid")
      */
-    private $product;
+    private $phone;
 
     /**
      * @var \DateTimeImmutable
@@ -85,21 +85,21 @@ class Offer
     }
 
     /**
-     * @return Product|null
+     * @return Phone|null
      */
-    public function getProduct(): ?Product
+    public function getPhone(): ?Phone
     {
-        return $this->product;
+        return $this->phone;
     }
 
     /**
-     * @param Product|null $product
+     * @param Phone|null $phone
      *
      * @return $this
      */
-    public function setProduct(?Product $product): self
+    public function setPhone(?Phone $phone): self
     {
-        $this->product = $product;
+        $this->phone = $phone;
 
         return $this;
     }

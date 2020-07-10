@@ -12,13 +12,25 @@ use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 /**
- * Class Product.
+ * Class Phone
  *
  * @ORM\Entity(repositoryClass=ProductRepository::class)
- * @ORM\Table(name="products")
+ * @ORM\Table(name="phones")
  */
-class Product
+class Phone
 {
+
+    /**
+     * Define a set of phones categories.
+     */
+    const PHONE_TYPES = [
+        'Premium',
+        'Exclusivité',
+        'Reconditionné',
+        'Bon plan',
+        'Petit prix'
+    ];
+
     /**
      * @var UuidInterface
      *
@@ -44,7 +56,7 @@ class Product
     /**
      * @var string
      *
-     * @ORM\Column(type="string", length=45)
+     * @ORM\Column(type="string", length=45, unique=true)
      */
     private $model;
 
@@ -63,16 +75,16 @@ class Product
     private $description;
 
     /**
-     * @var float
+     * @var string
      *
-     * @ORM\Column(type="float")
+     * @ORM\Column(type="decimal", precision=6, scale=2)
      */
     private $price;
 
     /**
      * @var Collection|Offer[]
      *
-     * @ORM\OneToMany(targetEntity=Offer::class, mappedBy="product", cascade={"persist", "remove"}, orphanRemoval=true)
+     * @ORM\OneToMany(targetEntity=Offer::class, mappedBy="phone", cascade={"persist", "remove"}, orphanRemoval=true)
      */
     private $offers;
 
@@ -91,7 +103,7 @@ class Product
     private $updateDate;
 
     /**
-     * Product constructor.
+     * Phone constructor.
      */
     public function __construct()
     {
@@ -208,19 +220,19 @@ class Product
     }
 
     /**
-     * @return float|null
+     * @return string|null
      */
-    public function getPrice(): ?float
+    public function getPrice(): ?string
     {
         return $this->price;
     }
 
     /**
-     * @param float $price
+     * @param string $price
      *
      * @return $this
      */
-    public function setPrice(float $price): self
+    public function setPrice(string $price): self
     {
         $this->price = $price;
 
@@ -244,7 +256,7 @@ class Product
     {
         if (!$this->offers->contains($offer)) {
             $this->offers[] = $offer;
-            $offer->setProduct($this);
+            $offer->setPhone($this);
         }
 
         return $this;
@@ -260,8 +272,8 @@ class Product
         if ($this->offers->contains($offer)) {
             $this->offers->removeElement($offer);
             // set the owning side to null (unless already changed)
-            if ($offer->getProduct() === $this) {
-                $offer->setProduct(null);
+            if ($offer->getPhone() === $this) {
+                $offer->setPhone(null);
             }
         }
 
