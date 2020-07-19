@@ -32,9 +32,9 @@ class Partner implements UserInterface
     * Define a set of partner status.
     */
     const PARTNER_TYPES = [
-        'magasin',
-        'spécialiste téléphonique',
-        'vente en ligne'
+        'Magasin',
+        'Spécialiste téléphonie',
+        'Vente en ligne'
     ];
 
     /**

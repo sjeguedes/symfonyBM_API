@@ -62,7 +62,7 @@ final class DataProvider extends BaseProvider
     /**
      * Define phone colors.
      */
-    const PHONE_COLORS = ['doré', 'gris', 'noir', 'beige', 'blanc', 'rouge', 'mauve', 'bleu'];
+    const PHONE_COLORS = ['Doré', 'Gris', 'Noir', 'Beige', 'Blanc', 'Rouge', 'Mauve', 'Bleu'];
 
     /**
      * Define a set of phone descriptions to produce a random content.

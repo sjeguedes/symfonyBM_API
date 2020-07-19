@@ -53,8 +53,7 @@ class PartnerFixtures extends BaseFixture
                 $domainWithoutTLD = $this->getCustomFakerProvider()->customSanitizedString($partnerName);
                 $partnerCompanyWebDomain = $domainWithoutTLD . '.' . $this->faker->tld;
                 // Get partner email
-                $emailUniquePart = '-' . lcfirst(DataProvider::PARTNER_COMPANY_SETS['label']) . '-' . $unique;
-                $partnerEmail = $partnerCompanyDepartment . $emailUniquePart . '@' . $partnerCompanyWebDomain;
+                $partnerEmail = strtolower($partnerCompanyDepartment) . '-' . $unique . '@' . $partnerCompanyWebDomain;
                 // Get partner roles
                 $partnerRoles = [Partner::DEFAULT_PARTNER_ROLE];
                 $partner = new Partner();

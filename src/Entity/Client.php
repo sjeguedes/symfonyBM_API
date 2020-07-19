@@ -17,9 +17,9 @@ use Ramsey\Uuid\UuidInterface;
  */
 class Client
 {
-    const INDIVIDUAL_TYPE = 'particulier';
+    const INDIVIDUAL_TYPE = 'Particulier';
 
-    const PROFESSIONAL_TYPE = 'professionnel';
+    const PROFESSIONAL_TYPE = 'Professionnel';
 
     /**
      * Define a set of client status.
