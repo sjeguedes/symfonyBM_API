@@ -9,9 +9,9 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "ext-intl": "*",
-        "doctrine/doctrine-bundle": "*",
-        "doctrine/doctrine-migrations-bundle": "*",
-        "doctrine/orm": "*",
+        "doctrine/doctrine-bundle": "^2.1.0",
+        "doctrine/doctrine-migrations-bundle": "^3.0.1",
+        "doctrine/orm": "2.7.*",
         "ramsey/uuid": "^4.0",
         "ramsey/uuid-doctrine": "^1.6",
         "symfony/console": "4.4.*",
@@ -21,7 +21,7 @@
         "symfony/security-bundle": "4.4.*",
         "symfony/stopwatch": "4.4.*",
         "symfony/twig-bundle": "4.4.*",
-        "symfony/yaml": "4.4.*",
+        "symfony/yaml": "4.4.*"
     },
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "^3.3",

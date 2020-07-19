@@ -1,3 +1,4 @@
+# run "git status --ignored" to check
 
 ###> symfony/framework-bundle ###
 /.env.local
