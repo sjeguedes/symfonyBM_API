@@ -29,8 +29,7 @@
         "doctrine/doctrine-fixtures-bundle": "^3.3",
         "fzaninotto/faker": "^1.9",
         "symfony/maker-bundle": "^1.19",
-        "symfony/web-profiler-bundle": "4.4.*",
-        "symfony/web-server-bundle": "4.4.*"
+        "symfony/web-profiler-bundle": "4.4.*"
     },
     "config": {
         "preferred-install": {
