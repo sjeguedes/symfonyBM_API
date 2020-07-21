@@ -10,6 +10,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class Phone
@@ -34,6 +35,8 @@ class Phone
     ];
 
     /**
+     * @Groups("phone_list_read")
+     *
      * @var UuidInterface
      *
      * @ORM\Id()
@@ -42,6 +45,8 @@ class Phone
     private $uuid;
 
     /**
+     * @Groups("phone_list_read")
+     *
      * @var string
      *
      * @ORM\Column(type="string", length=45)
@@ -49,6 +54,8 @@ class Phone
     private $type;
 
     /**
+     * @Groups("phone_list_read")
+     *
      * @var string
      *
      * @ORM\Column(type="string", length=45)
@@ -56,6 +63,8 @@ class Phone
     private $brand;
 
     /**
+     * @Groups("phone_list_read")
+     *
      * @var string
      *
      * @ORM\Column(type="string", length=45, unique=true)
@@ -91,6 +100,8 @@ class Phone
     private $offers;
 
     /**
+     * @Groups("phone_list_read")
+     *
      * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable")
@@ -98,6 +109,8 @@ class Phone
     private $creationDate;
 
     /**
+     * @Groups("phone_list_read")
+     *
      * @var \DateTimeImmutable|null
      *
      * @ORM\Column(type="datetime_immutable", nullable=true)
