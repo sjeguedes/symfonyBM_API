@@ -12,6 +12,8 @@ use Ramsey\Uuid\UuidInterface;
 /**
  * Class Client
  *
+ * Define an individual or professional client associated to a partner.
+ *
  * @ORM\Entity(repositoryClass=ClientRepository::class)
  * @ORM\Table(name="clients")
  */

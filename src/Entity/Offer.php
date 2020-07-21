@@ -12,6 +12,9 @@ use Ramsey\Uuid\UuidInterface;
 /**
  * Class Offer
  *
+ * Define which phones would be associated to partners
+ * even if it is not specified in application requirements.
+ *
  * @ORM\Entity(repositoryClass=OfferRepository::class)
  * @ORM\Table(name="offers")
  */

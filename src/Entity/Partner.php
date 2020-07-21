@@ -18,6 +18,10 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
 /**
  * Class Partner
  *
+ * Define an API consumer which has associated clients.
+ * Please note partner can have access to a particular list of phones
+ * event if it is not needed to run application.
+ *
  * @ORM\Entity(repositoryClass=PartnerRepository::class)
  * @ORM\Table(name="partners")
  */

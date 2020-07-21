@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Repository\ProductRepository;
+use App\Repository\PhoneRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -14,7 +14,9 @@ use Ramsey\Uuid\UuidInterface;
 /**
  * Class Phone
  *
- * @ORM\Entity(repositoryClass=ProductRepository::class)
+ * Define a particular phone with some features to distinguish it (e.g. brand, model, color, etc...).
+ *
+ * @ORM\Entity(repositoryClass=PhoneRepository::class)
  * @ORM\Table(name="phones")
  */
 class Phone

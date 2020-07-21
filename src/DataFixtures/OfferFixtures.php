@@ -40,12 +40,12 @@ class OfferFixtures extends BaseFixture implements DependentFixtureInterface
         $partnerProxyIndexes = $this->getAllIndexesRecursively(DataProvider::PARTNER_COMPANY_SETS['references']);
         // Get all phone models indexes which are used for Partner Proxy objects
         $phoneProxyIndexes = $this->getAllIndexesRecursively(DataProvider::PHONE_MODELS['references']);
-        // Create offers (products associated to partners)
+        // Create offers (phones associated to partners)
         $this->createFixtures(Offer::class, 40, function ($i) use ($partnerProxyIndexes, $phoneProxyIndexes) {
             // Get a partner entity reference
             /** @var object|Partner $partnerProxy */
             $partnerProxy = $this->getReference(Partner::class . '_' . array_rand(array_flip($partnerProxyIndexes)));
-            // Get a product entity reference
+            // Get a phone entity reference
             /** @var object|Phone $phoneProxy */
             $phoneProxy = $this->getReference(Phone::class . '_' . array_rand(array_flip($phoneProxyIndexes)));
             $offer = new Offer();

@@ -12,7 +12,7 @@ use App\Entity\Partner;
 /**
  * Class DataProvider
  *
- * Load partner initial set of data.
+ * Prepare french customized and random set of data.
  *
  * @see https://github.com/fzaninotto/Faker#user-content-faker-internals-understanding-providers
  * @see https://github.com/mbezhanov/faker-provider-collection/blob/master/src/Faker/Provider/Device.php
