@@ -8,6 +8,7 @@ use App\Repository\ClientRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class Client
@@ -32,6 +33,8 @@ class Client
     ];
 
     /**
+     * @Groups("client_list_read")
+     *
      * @var UuidInterface
      *
      * @ORM\Id()
@@ -40,6 +43,8 @@ class Client
     private $uuid;
 
     /**
+     * @Groups("client_list_read")
+     *
      * @var string
      *
      * @ORM\Column(type="string", length=45)
@@ -47,6 +52,8 @@ class Client
     private $type;
 
     /**
+     * @Groups("client_list_read")
+     *
      * @var string
      *
      * @ORM\Column(type="string", length=45)
@@ -61,6 +68,8 @@ class Client
     private $email;
 
     /**
+     * @Groups("client_list_read")
+     *
      * @var Partner
      *
      * @ORM\ManyToOne(targetEntity=Partner::class, inversedBy="clients")
@@ -69,6 +78,8 @@ class Client
     private $partner;
 
     /**
+     * @Groups("client_list_read")
+     *
      * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable")
@@ -76,6 +87,8 @@ class Client
     private $creationDate;
 
     /**
+     * @Groups("client_list_read")
+     *
      * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable", nullable=true)

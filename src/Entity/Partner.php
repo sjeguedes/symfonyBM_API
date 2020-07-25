@@ -10,10 +10,8 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
-use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
-use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Security\Core\User\UserProviderInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class Partner
@@ -42,6 +40,8 @@ class Partner implements UserInterface
     ];
 
     /**
+     * @Groups("client_list_read")
+     *
      * @var UuidInterface
      *
      * @ORM\Id()
@@ -57,6 +57,8 @@ class Partner implements UserInterface
     private $type;
 
     /**
+     * @Groups("client_list_read")
+     *
      * @var string
      *
      * @ORM\Column(type="string", length=45)
