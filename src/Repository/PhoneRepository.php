@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Phone;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * Class PhoneRepository
  */
-class PhoneRepository extends ServiceEntityRepository
+class PhoneRepository extends AbstractAPIRepository
 {
     /**
      * PhoneRepository constructor.
@@ -25,23 +23,54 @@ class PhoneRepository extends ServiceEntityRepository
     }
 
     /**
-     * Find a set of phones entities depending on offset and limit integers parameters.
+     * Find one associated Phone entity depending on a particular partner uuid string parameter.
      *
-     * @param int $page
-     * @param int $limit
+     * @param string $partnerUuid
+     * @param string $entityUuid
      *
-     * @return \IteratorAggregate|Paginator
+     * @return Phone|null
+     *
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
-    public function findPaginatedOnes(int $page, int $limit): \IteratorAggregate
+    public function findOneByPartner(string $partnerUuid, string $entityUuid): ?object
     {
-        $query = $this->createQueryBuilder('p')
+        return $this->createQueryBuilder('pho')
+            ->leftJoin('pho.offers', 'off','WITH', 'pho.uuid = off.phone')
+            ->leftJoin('off.partner', 'par', 'WITH', 'off.partner = par.uuid')
+            ->andWhere('pho.uuid = ?2')
+            ->setParameter(1, $partnerUuid)
+            ->setParameter(2, $entityUuid)
             ->getQuery()
-            // Define offset value
-            ->setFirstResult(($page - 1) * $limit)
-            // Pass limit value
-            ->setMaxResults($limit);
-        // Paginator is returned since it is an IteratorAggregate implementation.
-        // An array can also be returned with "iterator_to_array(new Paginator($query));".
-        return new Paginator($query);
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * Find a set of Phone entities results depending on a particular partner uuid parameter,
+     * with possible paginated results.
+     *
+     * @param string $partnerUuid
+     * @param array  $paginationData
+     *
+     * @return array|Phone[]
+     */
+    public function findAllByPartner(string $partnerUuid, array $paginationData = []): array
+    {
+        $queryBuilder =$this->createQueryBuilder('pho')
+            ->leftJoin('pho.offers', 'off','WITH', 'pho.uuid = off.phone')
+            ->leftJoin('off.partner', 'par', 'WITH', 'off.partner = par.uuid')
+            ->where('par.uuid = ?1')
+            ->setParameter(1, $partnerUuid);
+        // Get results with a pagination
+        if (!empty($paginationData)) {
+            return iterator_to_array($this->findPaginatedOnes(
+                $queryBuilder,
+                $paginationData['page'],
+                $paginationData['per_page']
+            ));
+        }
+        // Get all results
+        return $queryBuilder
+            ->getQuery()
+            ->getResult();
     }
 }

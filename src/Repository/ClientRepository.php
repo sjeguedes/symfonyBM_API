@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Client;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * Class ClientRepository
  */
-class ClientRepository extends ServiceEntityRepository
+class ClientRepository extends AbstractAPIRepository
 {
     /**
      * ClientRepository constructor.
@@ -25,46 +23,53 @@ class ClientRepository extends ServiceEntityRepository
     }
 
     /**
-     * Find all clients entities depending on a particular partner uuid string parameter.
+     * Find one associated Client entity depending on a particular partner uuid string parameter.
      *
-     * @param string $uuid
+     * @param string $partnerUuid
+     * @param string $entityUuid
      *
-     * @return array
+     * @return Client|null
+     *
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
-    public function findAllByPartner(string $uuid): array
+    public function findOneByPartner(string $partnerUuid, string $entityUuid): ?object
     {
-        return $this->createQueryBuilder('c')
-            ->addSelect('p')
-            ->leftJoin('c.partner', 'p', 'WITH', 'p.uuid = c.partner')
-            ->where('p.uuid = ?1')
-            ->setParameter(1, $uuid)
+        return $this->createQueryBuilder('cli')
+            ->leftJoin('cli.partner', 'par', 'WITH', 'par.uuid = cli.partner')
+            ->where('par.uuid = ?1')
+            ->andWhere('cli.uuid = ?2')
+            ->setParameter(1, $partnerUuid)
+            ->setParameter(2, $entityUuid)
             ->getQuery()
-            ->getResult();
+            ->getOneOrNullResult();
     }
 
     /**
-     * Find a set of clients entities depending on partner uuid, offset and limit integers parameters.
+     * Find a set of Client entities results depending on a particular partner uuid parameter,
+     * with possible paginated results.
      *
-     * @param string $uuid
-     * @param int    $page
-     * @param int    $limit
+     * @param string $partnerUuid
+     * @param array  $paginationData
      *
-     * @return \IteratorAggregate|Paginator
+     * @return array|Client[]
      */
-    public function findPaginatedOnesByPartner(string $uuid, int $page, int $limit): \IteratorAggregate
+    public function findAllByPartner(string $partnerUuid, array $paginationData = []): array
     {
-        $query = $this->createQueryBuilder('c')
-            ->addSelect('p')
-            ->leftJoin('c.partner', 'p', 'WITH', 'p.uuid = c.partner')
-            ->where('p.uuid = ?1')
-            ->setParameter(1, $uuid)
+        $queryBuilder = $this->createQueryBuilder('cli')
+            ->leftJoin('cli.partner', 'par', 'WITH', 'par.uuid = cli.partner')
+            ->where('par.uuid = ?1')
+            ->setParameter(1, $partnerUuid);
+        // Get results with a pagination
+        if (!empty($paginationData)) {
+            return iterator_to_array($this->findPaginatedOnes(
+                $queryBuilder,
+                $paginationData['page'],
+                $paginationData['per_page']
+            ));
+        }
+        // Get all results
+        return $queryBuilder
             ->getQuery()
-            // Define offset value
-            ->setFirstResult(($page - 1) * $limit)
-            // Pass limit value
-            ->setMaxResults($limit);
-        // Paginator is returned since it is an IteratorAggregate implementation.
-        // An array can also be returned with "iterator_to_array(new Paginator($query));".
-        return new Paginator($query);
+            ->getResult();
     }
 }

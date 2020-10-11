@@ -93,6 +93,8 @@ class Phone
     private $price;
 
     /**
+     * @Groups("phone_list_read")
+     *
      * @var Collection|Offer[]
      *
      * @ORM\OneToMany(targetEntity=Offer::class, mappedBy="phone", cascade={"persist", "remove"}, orphanRemoval=true)

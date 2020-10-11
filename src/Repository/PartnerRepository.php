@@ -34,8 +34,8 @@ class PartnerRepository extends ServiceEntityRepository
      */
     public function findOneByUserName(string $username): ?Partner
     {
-        return $this->createQueryBuilder('p')
-            ->where('p.name = :query OR p.email = :query')
+        return $this->createQueryBuilder('par')
+            ->where('par.name = :query OR par.email = :query')
             ->setParameter('query', $username)
             ->getQuery()
             ->getOneOrNullResult();

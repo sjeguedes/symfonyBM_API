@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\Phone;
 use App\Repository\PhoneRepository;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -13,81 +15,69 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 /**
- * PhoneController
+ * Class PhoneController.
  *
- * Manage all requests about phones data.
+ * Manage all requests from partner user about his selected phones data.
  *
- * @Route("/{_locale}")
+ * @Route("/api/v1")
  */
-class PhoneController extends AbstractController
+class PhoneController extends AbstractAPIController
 {
+    /**
+     * Define a pagination per page limit.
+     */
+    const PER_PAGE_LIMIT = 10;
+
     /**
      * @var PhoneRepository
      */
     private $phoneRepository;
 
     /**
-     * @var SerializerInterface
-     */
-    private $serializer;
-
-    /**
      * PhoneController constructor.
      *
-     * @param PhoneRepository     $phoneRepository
-     * @param SerializerInterface $serializer
+     * @param EntityManagerInterface $entityManager
+     * @param SerializerInterface    $serializer
      */
-    public function __construct(PhoneRepository $phoneRepository, SerializerInterface $serializer)
+    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer)
     {
-        $this->phoneRepository = $phoneRepository;
-        $this->serializer = $serializer;
+        parent::__construct($entityManager, $serializer);
+        $this->phoneRepository = $entityManager->getRepository(Phone::class);
     }
 
     /**
-     * List all available phones which are the referenced products
-     * without pagination.
-     *
-     * @return Response
-     *
-     * @Route({
-     *     "en": "/phones/list"
-     * }, name="list_phones", methods={"GET"})
-     */
-    public function listPhones(): Response
-    {
-        $phones = $this->phoneRepository->findAll();
-        // Filter results with serialization group
-        $data = $this->serializer->serialize(
-            $phones,
-            'json',
-            ['groups' => ['phone_list_read']]
-        );
-        // Pass JSON data to response
-        return new Response($data, Response::HTTP_OK, [
-            'Content-Type' => 'application/json'
-        ]);
-    }
-
-    /**
-     * List all available phones which are the referenced products
-     * with Doctrine paginated results.
+     * List all available phones for a particular authenticated partner
+     * which are the referenced products (catalog)
+     * with (Doctrine paginated results) or without pagination.
      *
      * @param Request $request
      *
-     * @return Response
+     * @return JsonResponse
      *
      * @Route({
-     *     "en": "/phones/paginated/{page<\d+>?1}/{limit<\d+>?10}"
-     * }, name="list_paginated_phones", methods={"GET"})
+     *     "en": "/phones"
+     * }, name="list_phones", methods={"GET"})
      *
-     * @see https://www.doctrine-project.org/projects/doctrine-orm/en/2.7/tutorials/pagination.html
+     * @throws \Exception
      */
-    public function listPaginatedPhones(Request $request): Response
+    public function listPhones(Request $request): JsonResponse
     {
-        $page = (int) $request->attributes->get('page');
-        $limit = (int) $request->attributes->get('limit');
+        // TODO: need to add authenticated user form request (JWT or OAuth)
         // Find a set of Phone entities thanks to parameters and Doctrine Paginator
-        $phones = $this->phoneRepository->findPaginatedOnes($page, $limit);
+        if (null !== $paginationData = $this->getPaginationData($request, self::PER_PAGE_LIMIT)) {
+            $phones = $this->phoneRepository->findPaginatedOnes(
+                $this->phoneRepository->getQueryBuilder(),
+                $paginationData['page'],
+                $paginationData['per_page']
+            );
+            //$phones = $this->phoneRepository->findAllByPartner($partnerUuid, $paginationData);
+        // No pagination
+        } else {
+            // TODO: add catalog route and particular method!
+            $phones = $this->phoneRepository->findAll();
+            // TODO: need to call this method when authentication will be performed!
+           //$phones = $this->phoneRepository->findAllByPartner($partnerUuid);
+        }
         // Filter results with serialization group
         $data = $this->serializer->serialize(
             $phones,
@@ -95,9 +85,7 @@ class PhoneController extends AbstractController
             ['groups' => ['phone_list_read']]
         );
         // Pass JSON data to response
-        return new Response($data, Response::HTTP_OK, [
-            'Content-Type' => 'application/json'
-        ]);
+        return $this->json($data, Response::HTTP_OK);
     }
 
     /**
@@ -107,13 +95,13 @@ class PhoneController extends AbstractController
      *
      * @param Request $request
      *
-     * @return Response
+     * @return JsonResponse
      *
      * @Route({
-     *     "en": "/phone/{uuid<[\w-]{36}>}"
+     *     "en": "/phones/{uuid<[\w-]{36}>}"
      * }, name="show_phone", methods={"GET"})
      */
-    public function showPhone(Request $request): Response
+    public function showPhone(Request $request): JsonResponse
     {
         $uuid = $request->attributes->get('uuid');
         $phone = $this->phoneRepository->findOneBy(['uuid' => $uuid]);
@@ -125,8 +113,6 @@ class PhoneController extends AbstractController
             [AbstractNormalizer::IGNORED_ATTRIBUTES => ['offers']]
         );
         // Pass JSON data to response
-        return new Response($data, Response::HTTP_OK, [
-            'Content-Type' => 'application/json'
-        ]);
+        return $this->json($data, Response::HTTP_OK);
     }
 }
