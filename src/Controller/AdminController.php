@@ -6,12 +6,12 @@ namespace App\Controller;
 
 use App\Entity\Client;
 use App\Entity\Phone;
+use App\Services\ExpressionLanguage\ApiExpressionLanguage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Class AdminController.
@@ -30,12 +30,19 @@ class AdminController extends AbstractAPIController
     /**
      * AdminController constructor.
      *
+     * @param ApiExpressionLanguage  $expressionLanguage
      * @param EntityManagerInterface $entityManager
-     * @param SerializerInterface    $serializer
+     * @param RequestStack           $requestStack
      */
-    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer)
-    {
-        parent::__construct($entityManager, $serializer);
+    public function __construct(
+        ApiExpressionLanguage $expressionLanguage,
+        EntityManagerInterface $entityManager,
+        RequestStack $requestStack
+    ) {
+        $this->serializer = $this->getSerializerBuilder()
+            ->setExpressionEvaluator($expressionLanguage->getApiExpressionEvaluator())
+            ->build();
+        parent::__construct($entityManager, $requestStack->getCurrentRequest(), $this->serializer);
     }
 
     /**
@@ -43,8 +50,6 @@ class AdminController extends AbstractAPIController
      * with (Doctrine paginated results) or without pagination.
      *
      * Please note using Symfony param converter is not really efficient here!
-     *
-     * @param Request $request
      *
      * @return JsonResponse
      *
@@ -54,25 +59,23 @@ class AdminController extends AbstractAPIController
      *
      * @throws \Exception
      */
-    public function listClientsPerPartner(Request $request): JsonResponse
+    public function listClientsPerPartner(): JsonResponse
     {
-        $partnerUuid = $request->attributes->get('uuid');
+        $partnerUuid = $this->request->attributes->get('uuid');
         $clientRepository = $this->entityManager->getRepository(Client::class);
-        // Find a set of Client entities thanks to partner uuid, parameters and Doctrine Paginator
-        if (null !== $paginationData = $this->getPaginationData($request, self::PER_PAGE_LIMIT)) {
-            $clients = $clientRepository->findAllByPartner($partnerUuid, $paginationData);
-        // No pagination
-        } else {
-            $clients = $clientRepository->findAllByPartner($partnerUuid);
-        }
+        // Find a set of Client entities with possible paginated results
+        $clients = $clientRepository->findListByPartner(
+            $partnerUuid,
+            $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
+        );
         // Filter results with serialization group
         $data = $this->serializer->serialize(
             $clients,
             'json',
-            ['groups' => ['client_list_read']]
+           $this->serializationContext->setGroups(['partner:clients_list:read'])
         );
-        // Pass JSON data to response
-        return $this->json($data, Response::HTTP_OK);
+        // Pass JSON data string to response
+        return $this->setJsonResponse($data, Response::HTTP_OK);
     }
 
     /**
@@ -80,8 +83,6 @@ class AdminController extends AbstractAPIController
      * with (Doctrine paginated results) or without pagination.
      *
      * Please note using Symfony param converter is not really efficient here!
-     *
-     * @param Request $request
      *
      * @return JsonResponse
      *
@@ -91,24 +92,22 @@ class AdminController extends AbstractAPIController
      *
      * @throws \Exception
      */
-    public function listPhonesPerPartner(Request $request): JsonResponse
+    public function listPhonesPerPartner(): JsonResponse
     {
-        $partnerUuid = $request->attributes->get('uuid');
+        $partnerUuid = $this->request->attributes->get('uuid');
         $phoneRepository = $this->entityManager->getRepository(Phone::class);
-        // Find a set of Phone entities thanks to partner uuid, parameters and Doctrine Paginator
-        if (null !== $paginationData = $this->getPaginationData($request, self::PER_PAGE_LIMIT)) {
-            $phones = $phoneRepository->findAllByPartner($partnerUuid, $paginationData);
-        // No pagination
-        } else {
-            $phones = $phoneRepository->findAllByPartner($partnerUuid);
-        }
+        // Find a set of Phone entities with possible paginated results
+        $phones = $phoneRepository->findListByPartner(
+            $partnerUuid,
+            $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
+        );
         // Filter results with serialization group
         $data = $this->serializer->serialize(
             $phones,
             'json',
-            ['groups' => ['phone_list_read']]
+            $this->serializationContext->setGroups(['partner:phones_list:read'])
         );
-        // Pass JSON data to response
-        return $this->json($data, Response::HTTP_OK);
+        // Pass JSON data string to response
+        return $this->setJsonResponse($data, Response::HTTP_OK);
     }
 }

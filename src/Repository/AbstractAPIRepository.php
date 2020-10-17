@@ -8,7 +8,6 @@ use App\Entity\Client;
 use App\Entity\Offer;
 use App\Entity\Partner;
 use App\Entity\Phone;
-use App\Repository\Traits\FilteredQueryHelperTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
@@ -20,8 +19,6 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 abstract class AbstractAPIRepository extends ServiceEntityRepository
 {
-    use FilteredQueryHelperTrait;
-
     /**
      * @var EntityManagerInterface
      */
@@ -37,11 +34,36 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
      * Define entities aliases for Doctrine query builder.
      */
     const DATABASE_ENTITIES_ALIASES = [
-        Client::class => 'cli',
-        Partner::class  => 'par',
-        Phone::class  => 'pho',
-        Offer::class  => 'off',
+        Client::class  => 'cli',
+        Partner::class => 'par',
+        Phone::class   => 'pho',
+        Offer::class   => 'off',
     ];
+
+    /**
+     * Find a set of entities paginated results depending on a particular Doctrine query builder,
+     * offset and limit integers parameters
+     * using Doctrine paginator.
+     *
+     * @param QueryBuilder $queryBuilder
+     * @param int          $page
+     * @param int          $limit
+     *
+     * @return array
+     *
+     * @see https://www.doctrine-project.org/projects/doctrine-orm/en/2.7/tutorials/pagination.html
+     */
+    public function filterWithPagination(QueryBuilder $queryBuilder, int $page, int $limit): array
+    {
+        $query = $queryBuilder->getQuery()
+            // Define offset value
+            ->setFirstResult(($page - 1) * $limit)
+            // Pass limit value
+            ->setMaxResults($limit);
+        // Paginator can be returned as an IteratorAggregate implementation.
+        // An array is returned with "iterator_to_array(new Paginator($query))" for APi needs.
+        return iterator_to_array(new Paginator($query));
+    }
 
     /**
      * Find one associated entity (Client, Phone, ...) depending on a particular partner uuid string parameter.
@@ -59,28 +81,27 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
      * Find all associated entities (client, Phone, ...) depending on a particular partner uuid string parameter
      * with possible paginated results.
      *
-     * @param string $partnerUuid
-     * @param array  $paginationData
+     * @param string     $partnerUuid
+     * @param array|null $paginationData
      *
      * @return array
      */
-    abstract public function findAllByPartner(string $partnerUuid, array $paginationData = []): array;
+    abstract public function findListByPartner(string $partnerUuid, ?array $paginationData): array;
 
     /**
-     * Find a set of entities with offset and limit integers parameters with Doctrine paginated results.
+     * Find a set of entities with offset and limit integers parameters with Doctrine paginated results
+     * or all results.
      *
      * @param QueryBuilder $queryBuilder,
-     * @param int          $page
-     * @param int          $limit
+     * @param array|null   $paginationData
      *
-     * @return \IteratorAggregate|Paginator
+     * @return array
      */
-    public function findPaginatedOnes(
-        QueryBuilder $queryBuilder,
-        int $page,
-        int $limit
-    ): \IteratorAggregate {
-        return $this->filterWithPagination($queryBuilder, $page, $limit);
+    public function findList(QueryBuilder $queryBuilder, ?array $paginationData): array {
+        if (!\is_null($paginationData)) {
+            return $this->filterWithPagination($queryBuilder, $paginationData['page'], $paginationData['per_page']);
+        }
+        return $this->findAll();
     }
 
     /**

@@ -48,24 +48,20 @@ class ClientRepository extends AbstractAPIRepository
      * Find a set of Client entities results depending on a particular partner uuid parameter,
      * with possible paginated results.
      *
-     * @param string $partnerUuid
-     * @param array  $paginationData
+     * @param string     $partnerUuid
+     * @param array|null $paginationData
      *
      * @return array|Client[]
      */
-    public function findAllByPartner(string $partnerUuid, array $paginationData = []): array
+    public function findListByPartner(string $partnerUuid, ?array $paginationData): array
     {
         $queryBuilder = $this->createQueryBuilder('cli')
             ->leftJoin('cli.partner', 'par', 'WITH', 'par.uuid = cli.partner')
             ->where('par.uuid = ?1')
             ->setParameter(1, $partnerUuid);
         // Get results with a pagination
-        if (!empty($paginationData)) {
-            return iterator_to_array($this->findPaginatedOnes(
-                $queryBuilder,
-                $paginationData['page'],
-                $paginationData['per_page']
-            ));
+        if (!\is_null($paginationData)) {
+            return $this->findList($queryBuilder, $paginationData);
         }
         // Get all results
         return $queryBuilder

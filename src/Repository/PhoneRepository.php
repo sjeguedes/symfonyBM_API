@@ -48,12 +48,12 @@ class PhoneRepository extends AbstractAPIRepository
      * Find a set of Phone entities results depending on a particular partner uuid parameter,
      * with possible paginated results.
      *
-     * @param string $partnerUuid
-     * @param array  $paginationData
+     * @param string     $partnerUuid
+     * @param array|null $paginationData
      *
      * @return array|Phone[]
      */
-    public function findAllByPartner(string $partnerUuid, array $paginationData = []): array
+    public function findListByPartner(string $partnerUuid, ?array $paginationData): array
     {
         $queryBuilder =$this->createQueryBuilder('pho')
             ->leftJoin('pho.offers', 'off','WITH', 'pho.uuid = off.phone')
@@ -61,12 +61,8 @@ class PhoneRepository extends AbstractAPIRepository
             ->where('par.uuid = ?1')
             ->setParameter(1, $partnerUuid);
         // Get results with a pagination
-        if (!empty($paginationData)) {
-            return iterator_to_array($this->findPaginatedOnes(
-                $queryBuilder,
-                $paginationData['page'],
-                $paginationData['per_page']
-            ));
+        if (!\is_null($paginationData)) {
+            return $this->findList($queryBuilder, $paginationData);
         }
         // Get all results
         return $queryBuilder

@@ -6,18 +6,17 @@ namespace App\Controller;
 
 use App\Entity\Phone;
 use App\Repository\PhoneRepository;
+use App\Services\ExpressionLanguage\ApiExpressionLanguage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Class PhoneController.
  *
- * Manage all requests from partner user about his selected phones data.
+ * Manage all requests simple partner user (consumer) about his selected phones data.
  *
  * @Route("/api/v1")
  */
@@ -36,21 +35,26 @@ class PhoneController extends AbstractAPIController
     /**
      * PhoneController constructor.
      *
+     * @param ApiExpressionLanguage  $expressionLanguage
      * @param EntityManagerInterface $entityManager
-     * @param SerializerInterface    $serializer
+     * @param RequestStack           $requestStack
      */
-    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer)
-    {
-        parent::__construct($entityManager, $serializer);
+    public function __construct(
+        ApiExpressionLanguage $expressionLanguage,
+        EntityManagerInterface $entityManager,
+        RequestStack $requestStack
+    ) {
+        $this->serializer = $this->getSerializerBuilder()
+            ->setExpressionEvaluator($expressionLanguage->getApiExpressionEvaluator())
+            ->build();
         $this->phoneRepository = $entityManager->getRepository(Phone::class);
+        parent::__construct($entityManager, $requestStack->getCurrentRequest(), $this->serializer);
     }
 
     /**
      * List all available phones for a particular authenticated partner
      * which are the referenced products (catalog)
      * with (Doctrine paginated results) or without pagination.
-     *
-     * @param Request $request
      *
      * @return JsonResponse
      *
@@ -60,32 +64,29 @@ class PhoneController extends AbstractAPIController
      *
      * @throws \Exception
      */
-    public function listPhones(Request $request): JsonResponse
+    public function listPhones(): JsonResponse
     {
         // TODO: need to add authenticated user form request (JWT or OAuth)
-        // Find a set of Phone entities thanks to parameters and Doctrine Paginator
-        if (null !== $paginationData = $this->getPaginationData($request, self::PER_PAGE_LIMIT)) {
-            $phones = $this->phoneRepository->findPaginatedOnes(
-                $this->phoneRepository->getQueryBuilder(),
-                $paginationData['page'],
-                $paginationData['per_page']
-            );
-            //$phones = $this->phoneRepository->findAllByPartner($partnerUuid, $paginationData);
-        // No pagination
-        } else {
-            // TODO: add catalog route and particular method!
+        // Find a set of Phone entities with possible paginated results
+        $phones = $this->phoneRepository->findList(
+            $this->phoneRepository->getQueryBuilder(),
+            $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
+        );
+        // TODO: need to call this method when authentication will be performed!
+        // Get catalog or list dedicated to a particular partner
+        /*if ($this->isFullListRequested($this->request)) {
             $phones = $this->phoneRepository->findAll();
-            // TODO: need to call this method when authentication will be performed!
-           //$phones = $this->phoneRepository->findAllByPartner($partnerUuid);
-        }
+        } else {
+            $phones = $this->phoneRepository->findAllByPartner($partnerUuid, $paginationData);
+        }*/
         // Filter results with serialization group
         $data = $this->serializer->serialize(
             $phones,
             'json',
-            ['groups' => ['phone_list_read']]
+            $this->serializationContext->setGroups(['partner:phones_list:read'])
         );
-        // Pass JSON data to response
-        return $this->json($data, Response::HTTP_OK);
+        // Pass JSON data string to response
+        return $this->setJsonResponse($data, Response::HTTP_OK);
     }
 
     /**
@@ -93,26 +94,23 @@ class PhoneController extends AbstractAPIController
      *
      * Please note Symfony param converter can be used here to retrieve a Phone entity.
      *
-     * @param Request $request
-     *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/phones/{uuid<[\w-]{36}>}"
      * }, name="show_phone", methods={"GET"})
      */
-    public function showPhone(Request $request): JsonResponse
+    public function showPhone(): JsonResponse
     {
-        $uuid = $request->attributes->get('uuid');
+        $uuid = $this->request->attributes->get('uuid');
         $phone = $this->phoneRepository->findOneBy(['uuid' => $uuid]);
-        // Filter result with serialization group
+        // Filter result with serialization annotation
         $data = $this->serializer->serialize(
             $phone,
-            'json',
-            // Exclude Offer collection since it is not expected at this time in app.
-            [AbstractNormalizer::IGNORED_ATTRIBUTES => ['offers']]
+            'json'
+            // Exclude Offer collection since it is not interesting for a simple partner!
         );
-        // Pass JSON data to response
-        return $this->json($data, Response::HTTP_OK);
+        // Pass JSON data string to response
+        return $this->setJsonResponse($data, Response::HTTP_OK);
     }
 }

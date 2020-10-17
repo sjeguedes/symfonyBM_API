@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Repository\OfferRepository;
 use Doctrine\ORM\Mapping as ORM;
+use JMS\Serializer\Annotation as Serializer;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -25,6 +26,7 @@ class Offer
      *
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
+     * @Serializer\Type("string")
      */
     private $uuid;
 

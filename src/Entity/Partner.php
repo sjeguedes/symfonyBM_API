@@ -8,10 +8,10 @@ use App\Repository\PartnerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JMS\Serializer\Annotation as Serializer;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class Partner
@@ -40,12 +40,13 @@ class Partner implements UserInterface
     ];
 
     /**
-     * @Groups("client_list_read")
-     *
      * @var UuidInterface
      *
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
+     *
+     * @Serializer\Groups({"admin:partner_clients_list:read"})
+     * @Serializer\Type("string")
      */
     private $uuid;
 
@@ -53,15 +54,17 @@ class Partner implements UserInterface
      * @var string
      *
      * @ORM\Column(type="string", length=45)
+     *
+     * @Serializer\Groups({"admin:partner_clients_list:read"})
      */
     private $type;
 
     /**
-     * @Groups("client_list_read")
-     *
      * @var string
      *
      * @ORM\Column(type="string", length=45)
+     *
+     * @Serializer\Groups({"admin:partner_clients_list:read"})
      */
     private $username;
 
@@ -69,6 +72,8 @@ class Partner implements UserInterface
      * @var string
      *
      * @ORM\Column(type="string", length=320, unique=true)
+     *
+     * @Serializer\Groups({"admin:partner_clients_list:read"})
      */
     private $email;
 

@@ -102,6 +102,26 @@
     "jdorn/sql-formatter": {
         "version": "v1.2.17"
     },
+    "jms/metadata": {
+        "version": "2.3.0"
+    },
+    "jms/serializer": {
+        "version": "3.9.0"
+    },
+    "jms/serializer-bundle": {
+        "version": "3.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "master",
+            "version": "3.0",
+            "ref": "384cec52df45f3bfd46a09930d6960a58872b268"
+        },
+        "files": [
+            "config/packages/dev/jms_serializer.yaml",
+            "config/packages/jms_serializer.yaml",
+            "config/packages/prod/jms_serializer.yaml"
+        ]
+    },
     "nikic/php-parser": {
         "version": "v4.5.0"
     },
@@ -113,15 +133,6 @@
     },
     "php": {
         "version": "7.2"
-    },
-    "phpdocumentor/reflection-common": {
-        "version": "2.2.0"
-    },
-    "phpdocumentor/reflection-docblock": {
-        "version": "5.2.0"
-    },
-    "phpdocumentor/type-resolver": {
-        "version": "1.3.0"
     },
     "psr/cache": {
         "version": "1.0.1"
@@ -204,6 +215,9 @@
     },
     "symfony/event-dispatcher-contracts": {
         "version": "v1.1.7"
+    },
+    "symfony/expression-language": {
+        "version": "v4.4.15"
     },
     "symfony/filesystem": {
         "version": "v4.4.10"
@@ -288,9 +302,6 @@
     "symfony/property-access": {
         "version": "v4.4.10"
     },
-    "symfony/property-info": {
-        "version": "v4.4.10"
-    },
     "symfony/routing": {
         "version": "4.2",
         "recipe": {
@@ -328,12 +339,6 @@
     },
     "symfony/security-http": {
         "version": "v4.4.10"
-    },
-    "symfony/serializer": {
-        "version": "v4.4.10"
-    },
-    "symfony/serializer-pack": {
-        "version": "v1.0.3"
     },
     "symfony/service-contracts": {
         "version": "v2.1.2"
@@ -399,9 +404,6 @@
     },
     "twig/twig": {
         "version": "v3.0.3"
-    },
-    "webmozart/assert": {
-        "version": "1.9.1"
     },
     "zendframework/zend-code": {
         "version": "3.4.1"

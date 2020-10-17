@@ -8,9 +8,9 @@ use App\Repository\PhoneRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JMS\Serializer\Annotation as Serializer;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
-use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class Phone
@@ -19,10 +19,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *
  * @ORM\Entity(repositoryClass=PhoneRepository::class)
  * @ORM\Table(name="phones")
+ *
+ * @see https://stackoverflow.com/questions/21916450/how-do-i-create-a-custom-exclusion-strategy-for-jms-serializer-that-allows-me-to
  */
 class Phone
 {
-
     /**
      * Define a set of phones categories.
      */
@@ -35,18 +36,17 @@ class Phone
     ];
 
     /**
-     * @Groups("phone_list_read")
-     *
      * @var UuidInterface
      *
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
+     *
+     * @Serializer\Groups({"partner:phones_list:read"})
+     * @Serializer\Type("string")
      */
     private $uuid;
 
     /**
-     * @Groups("phone_list_read")
-     *
      * @var string
      *
      * @ORM\Column(type="string", length=45)
@@ -54,20 +54,20 @@ class Phone
     private $type;
 
     /**
-     * @Groups("phone_list_read")
-     *
      * @var string
      *
      * @ORM\Column(type="string", length=45)
+     *
+     * @Serializer\Groups({"partner:phones_list:read"})
      */
     private $brand;
 
     /**
-     * @Groups("phone_list_read")
-     *
      * @var string
      *
      * @ORM\Column(type="string", length=45, unique=true)
+     *
+     * @Serializer\Groups({"partner:phones_list:read"})
      */
     private $model;
 
@@ -89,30 +89,32 @@ class Phone
      * @var string
      *
      * @ORM\Column(type="decimal", precision=6, scale=2)
+     *
+     * @Serializer\Groups({"partner:phones_list:read"})
      */
     private $price;
 
     /**
-     * @Groups("phone_list_read")
-     *
      * @var Collection|Offer[]
      *
      * @ORM\OneToMany(targetEntity=Offer::class, mappedBy="phone", cascade={"persist", "remove"}, orphanRemoval=true)
+     *
+     * @Serializer\Exclude(
+     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri())"
+     * )
      */
     private $offers;
 
     /**
-     * @Groups("phone_list_read")
-     *
      * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable")
+     *
+     * @Serializer\Groups({"partner:phones_list:read"})
      */
     private $creationDate;
 
     /**
-     * @Groups("phone_list_read")
-     *
      * @var \DateTimeImmutable|null
      *
      * @ORM\Column(type="datetime_immutable", nullable=true)
