@@ -91,6 +91,7 @@ class Phone
      * @ORM\Column(type="decimal", precision=6, scale=2)
      *
      * @Serializer\Groups({"partner:phones_list:read"})
+     * @Serializer\Type("double")
      */
     private $price;
 

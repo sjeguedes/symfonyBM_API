@@ -16,7 +16,7 @@ use Doctrine\Persistence\ObjectManager;
 class PhoneFixtures extends BaseFixture
 {
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function loadData(ObjectManager $manager): void
     {

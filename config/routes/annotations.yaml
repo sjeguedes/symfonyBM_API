@@ -1,7 +1,8 @@
 controllers:
     resource: ../../src/Controller/
     type: annotation
-
+    # https://symfony.com/doc/current/routing.html#route-groups-and-prefixes
+    prefix: '%api_and_version_path_prefix%' # prefix all routes paths for API
 kernel:
     resource: ../../src/Kernel.php
     type: annotation

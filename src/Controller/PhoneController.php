@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\Partner;
 use App\Entity\Phone;
 use App\Repository\PhoneRepository;
 use App\Services\ExpressionLanguage\ApiExpressionLanguage;
 use Doctrine\ORM\EntityManagerInterface;
+use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * Class PhoneController.
+ * Class PhoneController
  *
  * Manage all requests simple partner user (consumer) about his selected phones data.
- *
- * @Route("/api/v1")
  */
 class PhoneController extends AbstractAPIController
 {
@@ -53,7 +53,7 @@ class PhoneController extends AbstractAPIController
 
     /**
      * List all available phones for a particular authenticated partner
-     * which are the referenced products (catalog)
+     * or all the referenced products (catalog filter or when request made by an admin)
      * with (Doctrine paginated results) or without pagination.
      *
      * @return JsonResponse
@@ -66,19 +66,21 @@ class PhoneController extends AbstractAPIController
      */
     public function listPhones(): JsonResponse
     {
-        // TODO: need to add authenticated user form request (JWT or OAuth)
-        // Find a set of Phone entities with possible paginated results
-        $phones = $this->phoneRepository->findList(
-            $this->phoneRepository->getQueryBuilder(),
-            $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
-        );
-        // TODO: need to call this method when authentication will be performed!
-        // Get catalog or list dedicated to a particular partner
-        /*if ($this->isFullListRequested($this->request)) {
-            $phones = $this->phoneRepository->findAll();
+        // Get catalog complete list with filter or when request is made by an admin, with possible paginated results
+        if ($this->isFullListRequested($this->request) || $this->isGranted(Partner::API_ADMIN_ROLE)) {
+            $phones = $this->phoneRepository->findList(
+                $this->phoneRepository->getQueryBuilder(),
+                $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
+            );
         } else {
-            $phones = $this->phoneRepository->findAllByPartner($partnerUuid, $paginationData);
-        }*/
+            /** @var UuidInterface $partnerUuid */
+            $partnerUuid = $this->getUser()->getUuid();
+            // Find a set of Phone entities when request is made by a particular partner, with possible paginated results
+            $phones = $this->phoneRepository->findListByPartner(
+                $partnerUuid->toString(),
+                $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
+            );
+        }
         // Filter results with serialization group
         $data = $this->serializer->serialize(
             $phones,

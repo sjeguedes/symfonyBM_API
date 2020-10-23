@@ -30,7 +30,7 @@ class ClientFixtures extends BaseFixture implements DependentFixtureInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function loadData(ObjectManager $manager): void
     {

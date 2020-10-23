@@ -11,9 +11,10 @@ use JMS\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * Class AbstractAPIController.
+ * Class AbstractAPIController
  *
  * Centralize API common necessary instances and methods.
  */

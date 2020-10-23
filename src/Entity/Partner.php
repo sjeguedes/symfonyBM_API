@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation as Serializer;
+use Lexik\Bundle\JWTAuthenticationBundle\Security\User\JWTUserInterface;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -23,16 +24,21 @@ use Symfony\Component\Security\Core\User\UserInterface;
  * @ORM\Entity(repositoryClass=PartnerRepository::class)
  * @ORM\Table(name="partners")
  */
-class Partner implements UserInterface
+class Partner implements UserInterface, JWTUserInterface
 {
+    /**
+     * Define an APi admin role (associated to a partner special account).
+     */
+    const API_ADMIN_ROLE = 'ROLE_API_ADMIN';
+
     /**
      * Define a partner default role.
      */
     const DEFAULT_PARTNER_ROLE = 'ROLE_API_CONSUMER';
 
     /**
-    * Define a set of partner status.
-    */
+     * Define a set of partner status.
+     */
     const PARTNER_TYPES = [
         'Magasin',
         'Spécialiste téléphonie',
@@ -118,7 +124,7 @@ class Partner implements UserInterface
     private $offers;
 
     /**
-     *  @var Collection|Client[]
+     * @var Collection|Client[]
      *
      * @ORM\OneToMany(targetEntity=Client::class, mappedBy="partner", cascade={"persist", "remove"}, orphanRemoval=true)
      */
@@ -132,6 +138,21 @@ class Partner implements UserInterface
         $this->uuid = Uuid::uuid4();
         $this->offers = new ArrayCollection();
         $this->clients = new ArrayCollection();
+    }
+
+    /**
+     * Creates a new instance from a given JWT payload
+     * with Lexik JWTUserInterface implementation.
+     *
+     * {@inheritdoc}
+     *
+     * @see https://github.com/lexik/LexikJWTAuthenticationBundle/blob/master/Resources/doc/8-jwt-user-provider.md
+     */
+    public static function createFromPayload($username, array $payload): JWTUserInterface
+    {
+        return (new self()) // Uuid is provided by constructor!
+            ->setEmail($payload['email'])
+            ->setRoles($payload['roles']);
     }
 
     /**
@@ -203,7 +224,7 @@ class Partner implements UserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getPassword(): ?string
     {
@@ -243,12 +264,14 @@ class Partner implements UserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getRoles(): array
     {
         // Guarantee at least one role for every userS
-        $this->roles[] = Partner::DEFAULT_PARTNER_ROLE;
+        if (empty($this->roles)) {
+            $this->roles[] = Partner::DEFAULT_PARTNER_ROLE;
+        }
 
         return array_unique($this->roles);
     }
@@ -388,7 +411,7 @@ class Partner implements UserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getSalt(): ?string
     {
@@ -396,7 +419,7 @@ class Partner implements UserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function eraseCredentials(): void
     {

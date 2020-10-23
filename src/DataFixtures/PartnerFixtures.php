@@ -33,7 +33,7 @@ class PartnerFixtures extends BaseFixture
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function loadData(ObjectManager $manager): void
     {
@@ -43,7 +43,7 @@ class PartnerFixtures extends BaseFixture
         $index = 1;
         // Create partner (API consumer)
         foreach ($data as $partnerType => $partnersIndexes) {
-            $this->createFixtures(Partner::class, \count($partnersIndexes), function ($i) use ($partnerType) {
+            $this->createFixtures(Partner::class, \count($partnersIndexes), function ($i) use ($partnerType, $index) {
                 // Get corresponding partner name (professional only)
                 $unique = substr(md5(uniqid()), 0, 4);
                 $partnerName = $this->faker->lastName . ' ' . array_rand(array_flip(DataProvider::COMPANY_STATUS));
@@ -58,7 +58,8 @@ class PartnerFixtures extends BaseFixture
                 $partnerRoles = [Partner::DEFAULT_PARTNER_ROLE];
                 $partner = new Partner();
                 // Get partner password
-                $partnerPassword = $this->encoder->encodePassword($partner, 'pass_' . $partnerType);
+                dump($partnerName, $partnerEmail, 'pass_' . $index . ($i + 1));
+                $partnerPassword = $this->encoder->encodePassword($partner, 'pass_' . $index . ($i + 1));
                 return $partner
                     ->setCreationDate(new \DateTimeImmutable(sprintf("+%d days", -$i)))
                     ->setUpdateDate(new \DateTimeImmutable(sprintf("+%d days", -$i)))

@@ -10,7 +10,7 @@ use Faker\Provider\Base as BaseProvider;
 use App\Entity\Partner;
 
 /**
- * Class DataProvider.
+ * Class DataProvider
  *
  * Prepare french customized and random set of data.
  *

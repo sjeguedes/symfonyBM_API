@@ -6,19 +6,22 @@ namespace App\Controller;
 
 use App\Entity\Client;
 use App\Entity\Phone;
+use App\Repository\ClientRepository;
+use App\Repository\PhoneRepository;
 use App\Services\ExpressionLanguage\ApiExpressionLanguage;
 use Doctrine\ORM\EntityManagerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * Class AdminController.
+ * Class AdminController
  *
  * Manage all requests from authenticated administrator about API data management.
  *
- * @Route("/api/v1")
+ * @Security("is_granted('ROLE_API_ADMIN')")
  */
 class AdminController extends AbstractAPIController
 {
@@ -62,6 +65,7 @@ class AdminController extends AbstractAPIController
     public function listClientsPerPartner(): JsonResponse
     {
         $partnerUuid = $this->request->attributes->get('uuid');
+        /** @var ClientRepository $clientRepository */
         $clientRepository = $this->entityManager->getRepository(Client::class);
         // Find a set of Client entities with possible paginated results
         $clients = $clientRepository->findListByPartner(
@@ -95,6 +99,7 @@ class AdminController extends AbstractAPIController
     public function listPhonesPerPartner(): JsonResponse
     {
         $partnerUuid = $this->request->attributes->get('uuid');
+        /** @var PhoneRepository $phoneRepository */
         $phoneRepository = $this->entityManager->getRepository(Phone::class);
         // Find a set of Phone entities with possible paginated results
         $phones = $phoneRepository->findListByPartner(

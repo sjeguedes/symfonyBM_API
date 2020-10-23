@@ -32,7 +32,7 @@ class OfferFixtures extends BaseFixture implements DependentFixtureInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function loadData(ObjectManager $manager): void
     {

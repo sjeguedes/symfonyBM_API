@@ -9,7 +9,7 @@ use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionFunctionProviderInterface;
 
 /**
- * Class RequestExpressionProvider.
+ * Class ApiExpressionFunctionsProvider
  *
  * Provide a custom set of expression functions to be used with expression language engine.
  *
@@ -20,6 +20,11 @@ class ApiExpressionFunctionsProvider implements ExpressionFunctionProviderInterf
     const EXCLUDED_URI_PATTERNS = [
         '\/phones\/[\w-]{36}$'
     ];
+
+    /**
+     * @var ContainerInterface
+     */
+    private $serviceLocator;
 
     /**
      * @var array
@@ -33,8 +38,10 @@ class ApiExpressionFunctionsProvider implements ExpressionFunctionProviderInterf
      */
     public function __construct(ContainerInterface $container)
     {
+        $this->serviceLocator = $container;
         $this->variables = [
-            'container' => $container
+            'serviceLocator' => $container,
+            'requestStack'   => $container->has('request_stack') ? $container->get('request_stack') : null
         ];
     }
 
@@ -49,7 +56,7 @@ class ApiExpressionFunctionsProvider implements ExpressionFunctionProviderInterf
             new ExpressionFunction('isRequestAllowed', function (string $requestURI) {
                 $isFound = false;
                 foreach (self::EXCLUDED_URI_PATTERNS as $pattern) {
-                    if ($isFound = sprintf('%1$s" matches "/%2$s/"', $requestURI, $pattern)) {
+                    if ($isFound = sprintf('%1$s matches "/%2$s/"', $requestURI, $pattern)) {
                         break;
                     }
                 }
@@ -66,11 +73,15 @@ class ApiExpressionFunctionsProvider implements ExpressionFunctionProviderInterf
                 return !$isFound;
             }),
             new ExpressionFunction('service', function (string $serviceId) {
-                // Return DI container
-                return sprintf('$this->get(%s)', $serviceId);
+                // Return service
+                return sprintf(
+                    'call_user_func_array([%1$s, \'get\'], [%2$s])',
+                    $this->variables['serviceLocator'],
+                    $serviceId
+                );
             }, function (array $variables, string $serviceId) {
-                // Return DI container
-                return $variables['container']->get($serviceId);
+                // Return service
+                return $variables['serviceLocator']->get($serviceId);
             }),
         ];
     }

@@ -15,7 +15,9 @@ use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * Class AbstractAPIRepository.
+ * Class AbstractAPIRepository
+ *
+ * Centralize common queries handling.
  */
 abstract class AbstractAPIRepository extends ServiceEntityRepository
 {
@@ -24,9 +26,15 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
      */
     protected $entityManager;
 
-    public function __construct(ManagerRegistry $registry, $entityClass)
+    /**
+     * AbstractAPIRepository constructor.
+     *
+     * @param ManagerRegistry $registry
+     * @param string          $entityClassName
+     */
+    public function __construct(ManagerRegistry $registry, string $entityClassName)
     {
-        parent::__construct($registry, $entityClass);
+        parent::__construct($registry, $entityClassName);
         $this->entityManager = $this->getEntityManager();
     }
 
@@ -120,10 +128,12 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
      * @param QueryBuilder $queryBuilder
      *
      * @return object|null
+     *
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     public function getQueryResult(QueryBuilder $queryBuilder): ?object
     {
-        return $queryBuilder->getQuery()->getResult();
+        return $queryBuilder->getQuery()->getOneOrNullResult();
     }
 
     /**
