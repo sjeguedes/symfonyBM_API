@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\ExpressionLanguage;
 
+use App\Entity\Partner;
+use App\Entity\Phone;
+use Doctrine\Common\Util\ClassUtils;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionFunctionProviderInterface;
@@ -18,7 +21,8 @@ use Symfony\Component\ExpressionLanguage\ExpressionFunctionProviderInterface;
 class ApiExpressionFunctionsProvider implements ExpressionFunctionProviderInterface
 {
     const EXCLUDED_URI_PATTERNS = [
-        '\/phones\/[\w-]{36}$'
+        Phone::class   => '\/phones\/[\w-]{36}$', // Phone properties to exclude for phone details
+        Partner::class => '\/clients\/[\w-]{36}$', // Partner properties to exclude for client details
     ];
 
     /**
@@ -53,25 +57,33 @@ class ApiExpressionFunctionsProvider implements ExpressionFunctionProviderInterf
     public function getFunctions(): array
     {
         return [
-            new ExpressionFunction('isRequestAllowed', function (string $requestURI) {
+            // Exclude a property from serialization depending on request and resource which has this property
+            new ExpressionFunction('isRequestAllowed', function (string $requestURI, object $resource) {
+                // Get real class name from Doctrine proxy instance
+                $resourceClassName = ClassUtils::getClass($resource);
                 $isFound = false;
-                foreach (self::EXCLUDED_URI_PATTERNS as $pattern) {
-                    if ($isFound = sprintf('%1$s matches "/%2$s/"', $requestURI, $pattern)) {
+                foreach (self::EXCLUDED_URI_PATTERNS as $key => $pattern) {
+                    $isResourceMatched = $key === $resourceClassName;
+                    if ($isResourceMatched && $isFound = sprintf('%1$s matches "/%2$s/"', $requestURI, $pattern)) {
                         break;
                     }
                 }
                 // Return the opposite of result.
                 return !$isFound;
-            }, function (array $variables, string $requestURI) {
+            }, function (array $variables, string $requestURI, object $resource) {
+                // Get real class name from Doctrine proxy instance
+                $resourceClassName = ClassUtils::getClass($resource);
                 $isFound = false;
-                foreach (self::EXCLUDED_URI_PATTERNS as $pattern) {
-                    if ($isFound = preg_match('/'.$pattern.'/', $requestURI)) {
+                foreach (self::EXCLUDED_URI_PATTERNS as $key => $pattern) {
+                    $isResourceMatched = $key === $resourceClassName;
+                    if ($isResourceMatched && $isFound = preg_match('/'.$pattern.'/', $requestURI)) {
                         break;
                     }
                 }
                 // Return the opposite of result.
                 return !$isFound;
             }),
+            // Get an existing instance from the service locator
             new ExpressionFunction('service', function (string $serviceId) {
                 // Return service
                 return sprintf(

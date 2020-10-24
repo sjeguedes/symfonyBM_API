@@ -101,7 +101,7 @@ class Phone
      * @ORM\OneToMany(targetEntity=Offer::class, mappedBy="phone", cascade={"persist", "remove"}, orphanRemoval=true)
      *
      * @Serializer\Exclude(
-     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri())"
+     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
      * )
      */
     private $offers;

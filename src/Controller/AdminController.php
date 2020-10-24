@@ -72,7 +72,7 @@ class AdminController extends AbstractAPIController
             $partnerUuid,
             $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
         );
-        // Filter results with serialization group
+        // Filter results with serialization groups annotations with exclusion if necessary
         $data = $this->serializer->serialize(
             $clients,
             'json',
@@ -106,11 +106,73 @@ class AdminController extends AbstractAPIController
             $partnerUuid,
             $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
         );
-        // Filter results with serialization group
+        // Filter results with serialization groups annotations with exclusion if necessary
         $data = $this->serializer->serialize(
             $phones,
             'json',
             $this->serializationContext->setGroups(['partner:phones_list:read'])
+        );
+        // Pass JSON data string to response
+        return $this->setJsonResponse($data, Response::HTTP_OK);
+    }
+
+    /**
+     * Show details about a particular client depending on a particular partner "seller".
+     *
+     * @return JsonResponse
+     *
+     * @Route({
+     *     "en": "/partners/{parUuid<[\w-]{36}>}/clients/{cliUuid<[\w-]{36}>}"
+     * }, name="show_partner_client", methods={"GET"})
+     *
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function showPartnerClient(): JsonResponse
+    {
+        $partnerUuid = $this->request->attributes->get('parUuid');
+        $clientUuid = $this->request->attributes->get('cliUuid');
+        /** @var ClientRepository $clientRepository */
+        $clientRepository = $this->entityManager->getRepository(Client::class);
+        // Get details about a selected client by precising a specific partner
+        $client = $clientRepository->findOneByPartner(
+            $partnerUuid,
+            $clientUuid
+        );
+        // Filter result with serialization annotations if necessary
+        $data = $this->serializer->serialize(
+            $client,
+            'json'
+        );
+        // Pass JSON data string to response
+        return $this->setJsonResponse($data, Response::HTTP_OK);
+    }
+
+    /**
+     * Show details about a particular phone depending on a particular partner "seller".
+     *
+     * @return JsonResponse
+     *
+     * @Route({
+     *     "en": "/partners/{parUuid<[\w-]{36}>}/phones/{phoUuid<[\w-]{36}>}"
+     * }, name="show_partner_phone", methods={"GET"})
+     *
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function showPartnerPhone(): JsonResponse
+    {
+        $partnerUuid = $this->request->attributes->get('parUuid');
+        $phoneUuid = $this->request->attributes->get('phoUuid');
+        /** @var PhoneRepository $phoneRepository */
+        $phoneRepository = $this->entityManager->getRepository(Phone::class);
+        // Get details about a selected phone by precising a specific partner seller
+        $phone = $phoneRepository->findOneByPartner(
+            $partnerUuid,
+            $phoneUuid
+        );
+        // Filter result with serialization annotations if necessary
+        $data = $this->serializer->serialize(
+            $phone,
+            'json'
         );
         // Pass JSON data string to response
         return $this->setJsonResponse($data, Response::HTTP_OK);

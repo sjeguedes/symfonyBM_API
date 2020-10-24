@@ -67,15 +67,17 @@ class PhoneController extends AbstractAPIController
     public function listPhones(): JsonResponse
     {
         // Get catalog complete list with filter or when request is made by an admin, with possible paginated results
+        // An admin has access to all existing clients with this role!
         if ($this->isFullListRequested($this->request) || $this->isGranted(Partner::API_ADMIN_ROLE)) {
             $phones = $this->phoneRepository->findList(
                 $this->phoneRepository->getQueryBuilder(),
                 $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
             );
+        // Find a set of Phone entities when request is made by a particular partner, with possible paginated results
         } else {
+            // Get partner uuid from authenticated user
             /** @var UuidInterface $partnerUuid */
             $partnerUuid = $this->getUser()->getUuid();
-            // Find a set of Phone entities when request is made by a particular partner, with possible paginated results
             $phones = $this->phoneRepository->findListByPartner(
                 $partnerUuid->toString(),
                 $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)

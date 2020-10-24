@@ -62,6 +62,9 @@ class Partner implements UserInterface, JWTUserInterface
      * @ORM\Column(type="string", length=45)
      *
      * @Serializer\Groups({"admin:partner_clients_list:read"})
+     * @Serializer\Exclude(
+     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
+     * )
      */
     private $type;
 
@@ -87,6 +90,10 @@ class Partner implements UserInterface, JWTUserInterface
      * @var string
      *
      * @ORM\Column(type="string", length=98, unique=true)
+     *
+     * @Serializer\Exclude(
+     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
+     * )
      */
     private $password;
 
@@ -99,6 +106,10 @@ class Partner implements UserInterface, JWTUserInterface
      * @var array
      *
      * @ORM\Column(type="array")
+     *
+     * @Serializer\Exclude(
+     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
+     * )
      */
     private $roles;
 
@@ -113,6 +124,10 @@ class Partner implements UserInterface, JWTUserInterface
      * @var \DateTimeImmutable|null
      *
      * @ORM\Column(type="datetime_immutable", nullable=true)
+     *
+     * @Serializer\Exclude(
+     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
+     * )
      */
     private $updateDate;
 
@@ -120,6 +135,10 @@ class Partner implements UserInterface, JWTUserInterface
      * @var Collection|Offer[]
      *
      * @ORM\OneToMany(targetEntity=Offer::class, mappedBy="partner", cascade={"persist", "remove"}, orphanRemoval=true)
+     *
+     * @Serializer\Exclude(
+     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
+     * )
      */
     private $offers;
 
@@ -127,6 +146,10 @@ class Partner implements UserInterface, JWTUserInterface
      * @var Collection|Client[]
      *
      * @ORM\OneToMany(targetEntity=Client::class, mappedBy="partner", cascade={"persist", "remove"}, orphanRemoval=true)
+     *
+     * @Serializer\Exclude(
+     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
+     * )
      */
     private $clients;
 

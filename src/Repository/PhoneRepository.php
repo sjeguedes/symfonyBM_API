@@ -37,6 +37,7 @@ class PhoneRepository extends AbstractAPIRepository
         return $this->createQueryBuilder('pho')
             ->leftJoin('pho.offers', 'off','WITH', 'pho.uuid = off.phone')
             ->leftJoin('off.partner', 'par', 'WITH', 'off.partner = par.uuid')
+            ->where('par.uuid = ?1')
             ->andWhere('pho.uuid = ?2')
             ->setParameter(1, $partnerUuid)
             ->setParameter(2, $entityUuid)
