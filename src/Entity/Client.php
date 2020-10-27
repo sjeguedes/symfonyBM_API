@@ -47,6 +47,7 @@ class Client
      * @var string
      *
      * @ORM\Column(type="string", length=45)
+     * @Serializer\Type("string")
      */
     private $type;
 
@@ -56,6 +57,7 @@ class Client
      * @ORM\Column(type="string", length=45)
      *
      * @Serializer\Groups({"partner:clients_list:read"})
+     * @Serializer\Type("string")
      */
     private $name;
 
@@ -65,13 +67,14 @@ class Client
      * @ORM\Column(type="string", length=320, unique=true)
      *
      * @Serializer\Groups({"partner:clients_list:read"})
+     * @Serializer\Type("string")
      */
     private $email;
 
     /**
      * @var Partner
      *
-     * @ORM\ManyToOne(targetEntity=Partner::class, inversedBy="clients")
+     * @ORM\ManyToOne(targetEntity=Partner::class, cascade={"persist"}, inversedBy="clients")
      * @ORM\JoinColumn(name="partner_uuid", referencedColumnName="uuid", nullable=false)
      */
     private $partner;
@@ -98,6 +101,20 @@ class Client
     public function __construct()
     {
         $this->uuid = Uuid::uuid4();
+        $this->creationDate = new \DateTimeImmutable();
+        $this->updateDate = new \DateTimeImmutable();
+    }
+
+    /**
+     * @param UuidInterface $uuid
+     *
+     * @return $this
+     */
+    public function setUuid(UuidInterface $uuid): self
+    {
+        $this->uuid = $uuid;
+
+        return $this;
     }
 
     /**

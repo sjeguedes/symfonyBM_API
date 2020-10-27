@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Services\ExpressionLanguage;
+namespace App\Services\JMS\ExpressionLanguage;
 
 use JMS\Serializer\Expression\ExpressionEvaluator;
+use JMS\Serializer\Expression\ExpressionEvaluatorInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionFunctionProviderInterface;
@@ -78,7 +79,7 @@ class ApiExpressionLanguage extends BaseExpressionLanguage implements ServiceSub
      *
      * @return $this
      */
-    public function setApiExpressionEvaluator(ExpressionLanguage $expressionLanguage, $contextVariables = []): self
+    public function setApiExpressionEvaluator(ExpressionLanguage $expressionLanguage, array $contextVariables = []): self
     {
         $this->apiExpressionEvaluator = new ExpressionEvaluator($expressionLanguage, $contextVariables);
 
@@ -98,15 +99,15 @@ class ApiExpressionLanguage extends BaseExpressionLanguage implements ServiceSub
     /**
      * Get a JMS expression evaluator instance.
      *
-     * @return ExpressionEvaluator
+     * @return ExpressionEvaluatorInterface
      */
-    public function getApiExpressionEvaluator(): ExpressionEvaluator
+    public function getApiExpressionEvaluator(): ExpressionEvaluatorInterface
     {
         return $this->apiExpressionEvaluator;
     }
 
     /**
-     * Returns an array of service types required by such instances,
+     * Return an array of service types required by such instances thanks to a service locator,
      * optionally keyed by the service names used internally.
      *
      * {@inheritdoc}

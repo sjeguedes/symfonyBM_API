@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\ExpressionLanguage;
+namespace App\Services\JMS\ExpressionLanguage;
 
 use App\Entity\Partner;
 use App\Entity\Phone;

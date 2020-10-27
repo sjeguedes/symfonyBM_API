@@ -159,6 +159,8 @@ class Partner implements UserInterface, JWTUserInterface
     public function __construct()
     {
         $this->uuid = Uuid::uuid4();
+        $this->creationDate = new \DateTimeImmutable();
+        $this->updateDate = new \DateTimeImmutable();
         $this->offers = new ArrayCollection();
         $this->clients = new ArrayCollection();
     }

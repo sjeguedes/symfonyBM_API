@@ -7,12 +7,15 @@ namespace App\Controller;
 use App\Entity\Client;
 use App\Entity\Partner;
 use App\Repository\ClientRepository;
-use App\Services\ExpressionLanguage\ApiExpressionLanguage;
+use App\Repository\PartnerRepository;
+use App\Services\JMS\ExpressionLanguage\ApiExpressionLanguage;
 use Doctrine\ORM\EntityManagerInterface;
+use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Class ClientController
@@ -32,22 +35,31 @@ class ClientController extends AbstractAPIController
     private $clientRepository;
 
     /**
+     * @var UrlGeneratorInterface
+     */
+    private $urlGenerator;
+
+    /**
      * ClientController constructor.
      *
      * @param ApiExpressionLanguage  $expressionLanguage
      * @param EntityManagerInterface $entityManager
      * @param RequestStack           $requestStack
+     * @param UrlGeneratorInterface  $urlGenerator
      */
     public function __construct(
         ApiExpressionLanguage $expressionLanguage,
         EntityManagerInterface $entityManager,
-        RequestStack $requestStack
+        RequestStack $requestStack,
+        UrlGeneratorInterface $urlGenerator
     ) {
         $this->serializer = $this->getSerializerBuilder()
+            ->setObjectConstructor($this->getDeserializationObjectConstructor())
             ->setExpressionEvaluator($expressionLanguage->getApiExpressionEvaluator())
             ->build();
         $this->clientRepository = $entityManager->getRepository(Client::class);
         parent::__construct($entityManager, $requestStack->getCurrentRequest(), $this->serializer);
+        $this->urlGenerator = $urlGenerator;
     }
 
     /**
@@ -75,9 +87,10 @@ class ClientController extends AbstractAPIController
             );
         // Find a set of Client entities when request is made by a particular partner, with possible paginated results
         } else {
+            /** @var UuidInterface $partnerUuid */
             $partnerUuid = $this->getUser()->getUuid();
             $clients = $this->clientRepository->findListByPartner(
-                $partnerUuid,
+                $partnerUuid->toString(),
                 $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
             );
         }
@@ -103,6 +116,7 @@ class ClientController extends AbstractAPIController
      * }, name="show_client", methods={"GET"})
      *
      * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws \Exception
      */
     public function showClient(): JsonResponse
     {
@@ -113,9 +127,11 @@ class ClientController extends AbstractAPIController
             $client = $this->clientRepository->findOneBy(['uuid' => $uuid]);
         // Find partner client details
         } else {
+            // TODO: check null result to throw a custom exception and return an appropriate error response
+            /** @var UuidInterface $partnerUuid */
             $partnerUuid = $this->getUser()->getUuid();
             $client = $this->clientRepository->findOneByPartner(
-                $partnerUuid,
+                $partnerUuid->toString(),
                 $uuid
             );
         }
@@ -126,5 +142,50 @@ class ClientController extends AbstractAPIController
         );
         // Pass JSON data string to response
         return $this->setJsonResponse($data, Response::HTTP_OK);
+    }
+
+    /**
+     * Create a new client associated to authenticated partner.
+     *
+     * @return JsonResponse
+     *
+     * @Route({
+     *     "en": "/clients"
+     * }, name="create_client", methods={"POST"})
+     *
+     * @throws \Exception
+     */
+    public function createClient(): JsonResponse
+    {
+        // TODO: check body JSON content before with exception listener to return an appropriate error response
+        // Create a new client resource
+        $client = $this->serializer->deserialize(
+            $this->request->getContent(), // data as JSON string
+            Client::class,
+            'json'
+        );
+        // TODO: validate Client entity with validator to return an appropriate error response
+        // Associate authenticated partner to new client ans save data
+        /** @var UuidInterface $partnerUuid */
+        $partnerUuid = $this->getUser()->getUuid();
+        /** @var PartnerRepository $partnerRepository */
+        $partnerRepository = $this->entityManager->getRepository(Partner::class);
+        $authenticatedPartner = $partnerRepository->findOneBy(['uuid' => $partnerUuid->toString()]);
+        $authenticatedPartner->setUpdateDate(new \DateTimeImmutable())->addClient($client);
+        $this->entityManager->flush();
+        // Pass custom JSON data to response but response data can be empty!
+        return $this->setJsonResponse(
+            null,
+            Response::HTTP_CREATED,
+            // headers
+            [
+                'Location' => $this->urlGenerator->generate(
+                    'show_client',
+                    ['uuid' => $client->getUuid()->toString()],
+                    UrlGeneratorInterface::ABSOLUTE_URL
+                )
+            ],
+            Client::class
+        );
     }
 }

@@ -59,6 +59,7 @@ class Offer
     public function __construct()
     {
         $this->uuid = Uuid::uuid4();
+        $this->creationDate = new \DateTimeImmutable();
     }
 
     /**

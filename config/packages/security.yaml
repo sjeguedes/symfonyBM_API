@@ -8,10 +8,6 @@ security:
             algorithm: auto
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
-        # defined not to query database each time a JWT IS SENT
-        partner_api_consumer:
-            lexik_jwt:
-                class: 'App\Entity\Partner'
         partner_api_account:
             entity:
                 # the class of the entity that represents users
@@ -24,19 +20,17 @@ security:
             stateless: true
             anonymous: true
             json_login:
-                check_path: /api/v1/login/check
+                check_path: '/%api_and_version_path_prefix%/login/check' # ^/api/v1/login/check
                 username_path: api_account.email
                 password_path:  api_account.password
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
-            provider: partner_api_account
         api:
             pattern: '^/%api_and_version_path_prefix%' # ^/api/v1
             stateless: true
             guard:
                 authenticators:
                     - lexik_jwt_authentication.jwt_token_authenticator
-            provider: partner_api_consumer
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false

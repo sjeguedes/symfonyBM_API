@@ -7,7 +7,7 @@ namespace App\Controller;
 use App\Entity\Partner;
 use App\Entity\Phone;
 use App\Repository\PhoneRepository;
-use App\Services\ExpressionLanguage\ApiExpressionLanguage;
+use App\Services\JMS\ExpressionLanguage\ApiExpressionLanguage;
 use Doctrine\ORM\EntityManagerInterface;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -53,7 +53,7 @@ class PhoneController extends AbstractAPIController
 
     /**
      * List all available phones for a particular authenticated partner
-     * or all the referenced products (catalog filter or when request made by an admin)
+     * or all the referenced products (catalog filter or when request is made by an admin)
      * with (Doctrine paginated results) or without pagination.
      *
      * @return JsonResponse
@@ -94,7 +94,7 @@ class PhoneController extends AbstractAPIController
     }
 
     /**
-     * Show details about a particular phone.
+     * Show details about a particular phone provided by complete available list (catalog .
      *
      * Please note Symfony param converter can be used here to retrieve a Phone entity.
      *
@@ -103,10 +103,13 @@ class PhoneController extends AbstractAPIController
      * @Route({
      *     "en": "/phones/{uuid<[\w-]{36}>}"
      * }, name="show_phone", methods={"GET"})
+     *
+     * @throws \Exception
      */
     public function showPhone(): JsonResponse
     {
         $uuid = $this->request->attributes->get('uuid');
+        // Get phone details (from catalog at this time)
         $phone = $this->phoneRepository->findOneBy(['uuid' => $uuid]);
         // Filter result with serialization annotation
         $data = $this->serializer->serialize(

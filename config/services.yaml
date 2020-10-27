@@ -31,3 +31,10 @@ services:
     App\Services\Lexik\Listener\JWTCreatedListener:
         tags:
             - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_created}
+
+    # customise JMS object constructor to enforce use of entity constructor for deserialization
+    jms_serializer.unserialize_object_constructor:
+        alias: jms_serializer.unserialize_object_constructor.custom
+    jms_serializer.unserialize_object_constructor.custom:
+        class: App\Services\JMS\ObjectConstructor
+
