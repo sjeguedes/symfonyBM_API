@@ -58,7 +58,6 @@ class PartnerFixtures extends BaseFixture
                 $partnerRoles = [Partner::DEFAULT_PARTNER_ROLE];
                 $partner = new Partner();
                 // Get partner password
-                dump($partnerName, $partnerEmail, 'pass_' . $index . ($i + 1));
                 $partnerPassword = $this->encoder->encodePassword($partner, 'pass_' . $index . ($i + 1));
                 return $partner
                     ->setCreationDate(new \DateTimeImmutable(sprintf("+%d days", -$i)))

@@ -172,7 +172,8 @@ abstract class AbstractAPIController extends AbstractController
         preg_match('/\\\([^\\\]+)$/', $resourceClassName, $matches);
         $entityShortName = $matches[1];
         $messages = [
-            Response::HTTP_CREATED => "{$entityShortName} resource successfully created" // creation
+            Response::HTTP_CREATED    => "{$entityShortName} resource successfully created", // creation
+            Response::HTTP_NO_CONTENT => "{$entityShortName} resource successfully deleted" // deletion
         ];
         if (!\array_key_exists($statusCode, $messages)) {
             throw new \InvalidArgumentException('HTTP status code is not associated to a custom message!');

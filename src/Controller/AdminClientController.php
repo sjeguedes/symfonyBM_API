@@ -169,4 +169,38 @@ class AdminClientController extends AbstractAPIController
             Client::class
         );
     }
+
+    /**
+     * Delete a requested client associated to a particular requested partner "seller".
+     *
+     * @return Response
+     *
+     * @Route({
+     *     "en": "/partners/{parUuid<[\w-]{36}>}/clients/{cliUuid<[\w-]{36}>}"
+     * }, name="delete_partner_client", methods={"DELETE"})
+     *
+     * @throws \Exception
+     */
+    public function deletePartnerClient(): Response
+    {
+        $partnerUuid = $this->request->attributes->get('parUuid');
+        $clientUuid = $this->request->attributes->get('cliUuid');
+        // TODO: check null result to throw a custom exception and return an appropriate error response (Not found)
+        /** @var ClientRepository $clientRepository */
+        $clientRepository = $this->entityManager->getRepository(Client::class);
+        // Get requested client to delete
+        $client = $clientRepository->findOneByPartner(
+            $partnerUuid,
+            $clientUuid
+        );
+        // Get authenticated partner instance
+        $authenticatedPartner = $client->getPartner();
+        $authenticatedPartner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
+        $this->entityManager->flush();
+        // Response data must be empty in this case!
+        return new Response(
+            null,
+            Response::HTTP_NO_CONTENT
+        );
+    }
 }

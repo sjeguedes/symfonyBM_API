@@ -128,6 +128,7 @@ class ClientController extends AbstractAPIController
         // Find partner client details
         } else {
             // TODO: check null result to throw a custom exception and return an appropriate error response
+            // Get authenticated partner to match client to show
             /** @var UuidInterface $partnerUuid */
             $partnerUuid = $this->getUser()->getUuid();
             $client = $this->clientRepository->findOneByPartner(
@@ -157,7 +158,7 @@ class ClientController extends AbstractAPIController
      */
     public function createClient(): JsonResponse
     {
-        // TODO: check body JSON content before with exception listener to return an appropriate error response
+        // TODO: check body JSON content before with exception listener to return an appropriate error response (Not found))
         // Create a new client resource
         $client = $this->serializer->deserialize(
             $this->request->getContent(), // data as JSON string
@@ -186,6 +187,40 @@ class ClientController extends AbstractAPIController
                 )
             ],
             Client::class
+        );
+    }
+
+    /**
+     * Delete a client associated to authenticated partner.
+     *
+     * @return Response
+     *
+     * @Route({
+     *     "en": "/clients/{uuid<[\w-]{36}>}"
+     * }, name="delete_client", methods={"DELETE"})
+     *
+     * @throws \Exception
+     */
+    public function deleteClient(): Response
+    {
+        $uuid = $this->request->attributes->get('uuid');
+        // TODO: check null result to throw a custom exception and return an appropriate error response (Not found)
+        // Get authenticated partner to match client to remove and save deletion
+        /** @var UuidInterface $partnerUuid */
+        $partnerUuid = $this->getUser()->getUuid();
+        // Get requested client to delete
+        $client = $this->clientRepository->findOneByPartner(
+            $partnerUuid->toString(),
+            $uuid
+        );
+        // Get authenticated partner instance
+        $authenticatedPartner = $client->getPartner();
+        $authenticatedPartner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
+        $this->entityManager->flush();
+        // Response data must be empty in this case!
+        return new Response(
+            null,
+            Response::HTTP_NO_CONTENT
         );
     }
 }
