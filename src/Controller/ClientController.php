@@ -8,7 +8,9 @@ use App\Entity\Client;
 use App\Entity\Partner;
 use App\Repository\ClientRepository;
 use App\Repository\PartnerRepository;
-use App\Services\JMS\ExpressionLanguage\ApiExpressionLanguage;
+use App\Services\JMS\Builder\SerializationBuilder;
+use App\Services\JMS\ExpressionLanguage\ExpressionLanguage;
+use App\Services\JMS\Builder\SerializationBuilderInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -42,23 +44,25 @@ class ClientController extends AbstractAPIController
     /**
      * ClientController constructor.
      *
-     * @param ApiExpressionLanguage  $expressionLanguage
-     * @param EntityManagerInterface $entityManager
-     * @param RequestStack           $requestStack
-     * @param UrlGeneratorInterface  $urlGenerator
+     * @param ExpressionLanguage            $expressionLanguage
+     * @param EntityManagerInterface        $entityManager
+     * @param RequestStack                  $requestStack
+     * @param SerializationBuilderInterface $serializationBuilder
+     * @param UrlGeneratorInterface         $urlGenerator
      */
     public function __construct(
-        ApiExpressionLanguage $expressionLanguage,
+        ExpressionLanguage $expressionLanguage,
         EntityManagerInterface $entityManager,
         RequestStack $requestStack,
+        SerializationBuilderInterface $serializationBuilder,
         UrlGeneratorInterface $urlGenerator
     ) {
-        $this->serializer = $this->getSerializerBuilder()
-            ->setObjectConstructor($this->getDeserializationObjectConstructor())
-            ->setExpressionEvaluator($expressionLanguage->getApiExpressionEvaluator())
-            ->build();
+        // Initialize deserialization object constructor for deserialization and expression language evaluator instances
+        /** @var SerializationBuilder $serializationBuilder */
+        $serializationBuilder->initDeserializationObjectConstructor()
+            ->initExpressionLanguageEvaluator($expressionLanguage);
         $this->clientRepository = $entityManager->getRepository(Client::class);
-        parent::__construct($entityManager, $requestStack->getCurrentRequest(), $this->serializer);
+        parent::__construct($entityManager, $requestStack->getCurrentRequest(), $serializationBuilder);
         $this->urlGenerator = $urlGenerator;
     }
 

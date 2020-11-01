@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\AbstractAPIRepository;
-use App\Services\JMS\ObjectConstructor;
+use App\Services\JMS\Builder\SerializationBuilderInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use JMS\Serializer\Construction\ObjectConstructorInterface;
 use JMS\Serializer\SerializationContext;
-use JMS\Serializer\SerializerBuilder;
 use JMS\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -46,21 +44,21 @@ abstract class AbstractAPIController extends AbstractController
     /**
      * AbstractAPIController constructor.
      *
-     * @param EntityManagerInterface $entityManager
-     * @param Request                $request
-     * @param SerializerInterface    $serializer
-     * @param bool                   $isSerializationContextNeeded
+     * @param EntityManagerInterface        $entityManager
+     * @param Request                       $request
+     * @param SerializationBuilderInterface $serializationBuilder
+     * @param bool                          $isSerializationContextNeeded
      */
     public function __construct(
         EntityManagerInterface $entityManager,
         Request $request,
-        SerializerInterface $serializer = null,
+        SerializationBuilderInterface $serializationBuilder,
         bool $isSerializationContextNeeded = true
     ) {
         $this->entityManager = $entityManager;
         $this->request = $request;
-        $this->serializer = $serializer ?? $this->getSerializer();
-        $this->serializationContext = $isSerializationContextNeeded ? $this->getSerializationContext() : null;
+        $this->serializer = $serializationBuilder->build();
+        $this->serializationContext = $isSerializationContextNeeded ? $serializationBuilder->getSerializationContext() : null;
     }
 
     /**
@@ -88,46 +86,6 @@ abstract class AbstractAPIController extends AbstractController
     }
 
     /**
-     * Get a JMS Deserialization Object constructor instance.
-     *
-     * @return ObjectConstructorInterface
-     */
-    protected function getDeserializationObjectConstructor(): ObjectConstructorInterface
-    {
-        return new ObjectConstructor();
-    }
-
-    /**
-     * Get a JMS SerializationContext instance.
-     *
-     * @return SerializationContext
-     */
-    protected function getSerializationContext(): SerializationContext
-    {
-        return SerializationContext::create();
-    }
-
-    /**
-     * Get a JMS Serializer instance.
-     *
-     * @return SerializerInterface
-     */
-    protected function getSerializer(): SerializerInterface
-    {
-        return $this->getSerializerBuilder()->build();
-    }
-
-    /**
-     * Get a JMS SerializerBuilder instance.
-     *
-     * @return SerializerBuilder
-     */
-    protected function getSerializerBuilder(): SerializerBuilder
-    {
-        return SerializerBuilder::create();
-    }
-
-    /**
      * Check if full list query parameter exists.
      *
      * Please note this can be used to get phone catalog for instance or other complete list.
@@ -138,7 +96,7 @@ abstract class AbstractAPIController extends AbstractController
      */
     public function isFullListRequested(Request $request): bool
     {
-        return null !== $request->query->get('from_full_list') || null !== $request->query->get('list');
+        return null !== $request->query->get('full_list') || null !== $request->query->get('catalog');
     }
 
     /**

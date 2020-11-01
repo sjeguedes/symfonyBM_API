@@ -7,7 +7,9 @@ namespace App\Controller;
 use App\Entity\Partner;
 use App\Entity\Phone;
 use App\Repository\PhoneRepository;
-use App\Services\JMS\ExpressionLanguage\ApiExpressionLanguage;
+use App\Services\JMS\Builder\SerializationBuilder;
+use App\Services\JMS\ExpressionLanguage\ExpressionLanguage;
+use App\Services\JMS\Builder\SerializationBuilderInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -35,20 +37,22 @@ class PhoneController extends AbstractAPIController
     /**
      * PhoneController constructor.
      *
-     * @param ApiExpressionLanguage  $expressionLanguage
-     * @param EntityManagerInterface $entityManager
-     * @param RequestStack           $requestStack
+     * @param ExpressionLanguage            $expressionLanguage
+     * @param EntityManagerInterface        $entityManager
+     * @param RequestStack                  $requestStack
+     * @param SerializationBuilderInterface $serializationBuilder
      */
     public function __construct(
-        ApiExpressionLanguage $expressionLanguage,
+        ExpressionLanguage $expressionLanguage,
         EntityManagerInterface $entityManager,
-        RequestStack $requestStack
+        RequestStack $requestStack,
+        SerializationBuilderInterface $serializationBuilder
     ) {
-        $this->serializer = $this->getSerializerBuilder()
-            ->setExpressionEvaluator($expressionLanguage->getApiExpressionEvaluator())
-            ->build();
+        // Initialize an expression language evaluator instance
+        /** @var SerializationBuilder $serializationBuilder */
+        $serializationBuilder->initExpressionLanguageEvaluator($expressionLanguage);
         $this->phoneRepository = $entityManager->getRepository(Phone::class);
-        parent::__construct($entityManager, $requestStack->getCurrentRequest(), $this->serializer);
+        parent::__construct($entityManager, $requestStack->getCurrentRequest(), $serializationBuilder);
     }
 
     /**

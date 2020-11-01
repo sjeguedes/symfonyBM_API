@@ -12,13 +12,13 @@ use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionFunctionProviderInterface;
 
 /**
- * Class ApiExpressionFunctionsProvider
+ * Class ExpressionFunctionsProvider
  *
  * Provide a custom set of expression functions to be used with expression language engine.
  *
  * @see https://jmsyst.com/bundles/JMSSerializerBundle/master/configuration#expression-language
  */
-class ApiExpressionFunctionsProvider implements ExpressionFunctionProviderInterface
+class ExpressionFunctionsProvider implements ExpressionFunctionProviderInterface
 {
     const EXCLUDED_URI_PATTERNS = [
         Phone::class   => '\/phones\/[\w-]{36}$', // Phone properties to exclude for phone details

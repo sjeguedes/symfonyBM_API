@@ -4,18 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services\JMS\ExpressionLanguage;
 
-use JMS\Serializer\Expression\ExpressionEvaluator;
-use JMS\Serializer\Expression\ExpressionEvaluatorInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionFunctionProviderInterface;
-use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage as BaseExpressionLanguage;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
 /**
- * Class ApiExpressionLanguage
+ * Class ExpressionLanguage
  *
  * Manage custom expression language ecosystem inside API.
  *
@@ -23,17 +20,12 @@ use Symfony\Contracts\Service\ServiceSubscriberInterface;
  *
  * @see https://symfony.com/doc/current/service_container/service_subscribers_locators.html
  */
-class ApiExpressionLanguage extends BaseExpressionLanguage implements ServiceSubscriberInterface
+class ExpressionLanguage extends BaseExpressionLanguage implements ServiceSubscriberInterface
 {
-    /**
-     * @var ExpressionEvaluator
-     */
-    private $apiExpressionEvaluator;
-
     /**
      * @var ExpressionFunctionProviderInterface
      */
-    private $apiExpressionFunctionsProvider;
+    private $expressionFunctionsProvider;
 
     /**
      * @var ContainerInterface
@@ -41,7 +33,7 @@ class ApiExpressionLanguage extends BaseExpressionLanguage implements ServiceSub
     private $serviceLocator;
 
     /**
-     * ApiExpressionLanguage constructor.
+     * ExpressionLanguage constructor.
      *
      * @param ContainerInterface          $container
      * @param CacheItemPoolInterface|null $cache
@@ -50,10 +42,9 @@ class ApiExpressionLanguage extends BaseExpressionLanguage implements ServiceSub
     public function __construct(ContainerInterface $container, CacheItemPoolInterface $cache = null, array $providers = [])
     {
         $this->serviceLocator = $container;
-        $this->setApiExpressionFunctionsProvider($container);
-        $this->setApiExpressionEvaluator($this, $this->apiExpressionFunctionsProvider->getVariables());
+        $this->initExpressionFunctionsProvider($container);
         // Prepend API provider to be able to override it
-        array_unshift($providers, $this->apiExpressionFunctionsProvider);
+        array_unshift($providers, $this->expressionFunctionsProvider);
         parent::__construct($cache, $providers);
     }
 
@@ -64,24 +55,9 @@ class ApiExpressionLanguage extends BaseExpressionLanguage implements ServiceSub
      *
      * @return $this
      */
-    public function setApiExpressionFunctionsProvider(ContainerInterface $container): self
+    public function initExpressionFunctionsProvider(ContainerInterface $container): self
     {
-        $this->apiExpressionFunctionsProvider = new ApiExpressionFunctionsProvider($container);
-
-        return $this;
-    }
-
-    /**
-     * Set a JMS expression evaluator instance.
-     *
-     * @param ExpressionLanguage $expressionLanguage
-     * @param array              $contextVariables
-     *
-     * @return $this
-     */
-    public function setApiExpressionEvaluator(ExpressionLanguage $expressionLanguage, array $contextVariables = []): self
-    {
-        $this->apiExpressionEvaluator = new ExpressionEvaluator($expressionLanguage, $contextVariables);
+        $this->expressionFunctionsProvider = new ExpressionFunctionsProvider($container);
 
         return $this;
     }
@@ -91,19 +67,9 @@ class ApiExpressionLanguage extends BaseExpressionLanguage implements ServiceSub
      *
      * @return ExpressionFunctionProviderInterface
      */
-    public function getApiExpressionFunctionsProvider(): ExpressionFunctionProviderInterface
+    public function getExpressionFunctionsProvider(): ExpressionFunctionProviderInterface
     {
-        return $this->apiExpressionFunctionsProvider;
-    }
-
-    /**
-     * Get a JMS expression evaluator instance.
-     *
-     * @return ExpressionEvaluatorInterface
-     */
-    public function getApiExpressionEvaluator(): ExpressionEvaluatorInterface
-    {
-        return $this->apiExpressionEvaluator;
+        return $this->expressionFunctionsProvider;
     }
 
     /**

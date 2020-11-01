@@ -8,7 +8,9 @@ use App\Entity\Client;
 use App\Entity\Partner;
 use App\Repository\ClientRepository;
 use App\Repository\PartnerRepository;
-use App\Services\JMS\ExpressionLanguage\ApiExpressionLanguage;
+use App\Services\JMS\Builder\SerializationBuilder;
+use App\Services\JMS\ExpressionLanguage\ExpressionLanguage;
+use App\Services\JMS\Builder\SerializationBuilderInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -30,6 +32,7 @@ class AdminClientController extends AbstractAPIController
      * Define a pagination per page limit.
      */
     const PER_PAGE_LIMIT = 10;
+
     /**
      * @var UrlGeneratorInterface
      */
@@ -38,22 +41,24 @@ class AdminClientController extends AbstractAPIController
     /**
      * AdminClientController constructor.
      *
-     * @param ApiExpressionLanguage  $expressionLanguage
-     * @param EntityManagerInterface $entityManager
-     * @param RequestStack           $requestStack
-     * @param UrlGeneratorInterface  $urlGenerator
+     * @param ExpressionLanguage            $expressionLanguage
+     * @param EntityManagerInterface        $entityManager
+     * @param RequestStack                  $requestStack
+     * @param SerializationBuilderInterface $serializationBuilder
+     * @param UrlGeneratorInterface         $urlGenerator
      */
     public function __construct(
-        ApiExpressionLanguage $expressionLanguage,
+        ExpressionLanguage $expressionLanguage,
         EntityManagerInterface $entityManager,
         RequestStack $requestStack,
+        SerializationBuilderInterface $serializationBuilder,
         UrlGeneratorInterface $urlGenerator
     ) {
-        $this->serializer = $this->getSerializerBuilder()
-            ->setObjectConstructor($this->getDeserializationObjectConstructor())
-            ->setExpressionEvaluator($expressionLanguage->getApiExpressionEvaluator())
-            ->build();
-        parent::__construct($entityManager, $requestStack->getCurrentRequest(), $this->serializer);
+        // Initialize deserialization object constructor for deserialization and expression language evaluator instances
+        /** @var SerializationBuilder $serializationBuilder */
+        $serializationBuilder->initDeserializationObjectConstructor()
+            ->initExpressionLanguageEvaluator($expressionLanguage);
+        parent::__construct($entityManager, $requestStack->getCurrentRequest(), $serializationBuilder);
         $this->urlGenerator = $urlGenerator;
     }
 
@@ -74,6 +79,7 @@ class AdminClientController extends AbstractAPIController
     public function listClientsPerPartner(): JsonResponse
     {
         $partnerUuid = $this->request->attributes->get('uuid');
+        // TODO: check null result to throw a custom exception and return an appropriate error response
         /** @var ClientRepository $clientRepository */
         $clientRepository = $this->entityManager->getRepository(Client::class);
         // Find a set of Client entities with possible paginated results

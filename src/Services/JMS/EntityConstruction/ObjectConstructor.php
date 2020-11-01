@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\JMS;
+namespace App\Services\JMS\EntityConstruction;
 
 use JMS\Serializer\Construction\ObjectConstructorInterface;
 use JMS\Serializer\DeserializationContext;
