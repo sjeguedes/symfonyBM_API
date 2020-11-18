@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataFixtures;
 
-use App\Services\Faker\DataProvider;
+use App\Services\Faker\Provider\DataProvider;
 use App\Entity\Partner;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
@@ -69,7 +69,7 @@ class PartnerFixtures extends BaseFixture
                     ->setRoles($partnerRoles);
             }, $index);
             // Manage multiple series
-           $index ++;
+           $index++;
         }
         $manager->flush();
     }

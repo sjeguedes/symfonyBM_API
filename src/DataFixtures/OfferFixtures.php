@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataFixtures;
 
-use App\Services\Faker\DataProvider;
+use App\Services\Faker\Provider\DataProvider;
 use App\Entity\Offer;
 use App\Entity\Partner;
 use App\Entity\Phone;

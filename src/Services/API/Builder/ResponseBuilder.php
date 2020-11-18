@@ -65,14 +65,15 @@ class ResponseBuilder
         int $statusCode = 200,
         array $headers = []
     ): JsonResponse {
-        // Define HAL format added to JSON response
+        // Define HAL format added to JSON response by default
         $headers['Content-Type'] = 'application/hal+json';
         // Get response custom configured data
         if (!\is_null($data) && Response::HTTP_OK !== $statusCode) {
+            // Get exception or error correct Content-Type header
+            $headers['Content-Type'] = $statusCode >= Response::HTTP_BAD_REQUEST
+                ? 'application/problem+json' : 'application/json';
             $data = $this->setCustomJsonData($statusCode, $data);
-            $headers['Content-Type'] = 'application/json';
         }
-        //return JsonResponse::fromJsonString($data, $statusCode, $headers);
         return new JsonResponse($data, $statusCode, $headers, true);
     }
 
