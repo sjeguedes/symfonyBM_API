@@ -1,0 +1,118 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controller;
+
+use App\Entity\Partner;
+use App\Services\API\Builder\ResponseBuilder;
+use JMS\Serializer\SerializationContext;
+use JMS\Serializer\SerializerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+
+/**
+ * Class PartnerController
+ *
+ * Manage all requests made by a partner user (consumer) about his own data.
+ *
+ * Please note that an administrator can access any partner data.
+ *
+ * @see https://symfony.com/doc/current/controller/forwarding.html
+ * @see https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html#creating-a-converter
+ */
+class PartnerController extends AbstractController
+{
+    /**
+     * @var ResponseBuilder
+     */
+    private $responseBuilder;
+
+    /**
+     * @var SerializerInterface
+     */
+    private $serializer;
+
+    /**
+     * @var SerializationContext
+     */
+    private $serializationContext;
+
+    /**
+     * PartnerController constructor.
+     *
+     * @param ResponseBuilder $responseBuilder
+     */
+    public function __construct(
+        ResponseBuilder $responseBuilder
+    ) {
+        $this->responseBuilder = $responseBuilder;
+        $this->serializer = $responseBuilder->getSerializationProvider()->getSerializer();
+        $this->serializationContext = $responseBuilder->getSerializationProvider()->getSerializationContext();
+    }
+
+    /**
+     * Show details about a particular partner.
+     *
+     * Please note that Symfony param converter is used here to retrieve a Partner entity.
+     *
+     * @param Partner $partner
+     *
+     * @return JsonResponse
+     *
+     * @Route({
+     *     "en": "/partners/{uuid<[\w-]{36}>}"
+     * }, name="show_partner", methods={"GET"})
+     *
+     * @throws \Exception
+     */
+    public function showPartner(Partner $partner): JsonResponse
+    {
+        // TODO: check false result to throw a custom exception and return an appropriate error response
+        // TODO: Make a Voter service instead
+        if (!$this->isGranted(Partner::API_ADMIN_ROLE)) {
+            $requestedPartnerUuid = $partner->getUuid()->toString();
+            /** @var Partner $authenticatedPartner */
+            $authenticatedPartner = $this->getUser();
+            $authenticatedPartnerUuid = $authenticatedPartner->getUuid()->toString();
+            if ($requestedPartnerUuid !== $authenticatedPartnerUuid) {
+                // do stuff to return custom error response caught by kernel listener
+                throw new AccessDeniedException('Show action on partner resource not allowed');
+            }
+        }
+        // Filter result with serialization annotation
+        $data = $this->serializer->serialize(
+            $partner,
+            'json',
+            $this->serializationContext->setGroups(['Default', 'Partner_detail'])
+            // Exclude Offer collection for a simple partner, since it is not expected in this case!
+        );
+        // Pass JSON data string to response
+        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
+    }
+
+    /**
+     * Show details about a particular partner.
+     *
+     * Please note that Symfony param converter is used here to retrieve a Partner entity.
+     * A custom param converter could also ease email format check in this case.
+     *
+     * @param Partner $partner
+     *
+     * @return JsonResponse
+     *
+     * @Route({
+     *     "en": "/partners/{email<[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+>}"
+     * }, name="show_partner_by_email", methods={"GET"})
+     *
+     * @throws \Exception
+     */
+    public function showPartnerByEmail(Partner $partner): Response
+    {
+        // Return the same response as "showPartner" method with forwarding shortcut
+        return $this->forward(self::class . '::showPartner', ['partner' => $partner]);
+    }
+}

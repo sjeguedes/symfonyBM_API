@@ -22,7 +22,7 @@ class ClientFixtures extends BaseFixture implements DependentFixtureInterface
      *
      * @return array
      */
-    public function getDependencies() : array
+    public function getDependencies(): array
     {
         return [
             PartnerFixtures::class

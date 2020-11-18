@@ -27,19 +27,18 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
-    # add a custom expression functions provider to JMS serializer
-    App\Services\JMS\ExpressionLanguage\ExpressionFunctionsProvider:
+    # add JMS event subscriber for hateoas collection representation
+    App\Services\Hateoas\Event\Subscriber\CollectionRepresentationSubscriber:
         tags:
-            - jms.expression.function_provider
+            - jms_serializer.event_subscriber
 
-    # customise JWT payload thanks to Lexik listener
+    # add a Lexik listener to customise JWT payload
     App\Services\Lexik\Listener\JWTCreatedListener:
         tags:
-            - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_created}
+            - {name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_created}
 
-    # customise JMS object constructor to enforce use of entity constructor for deserialization
+    # add a JMS object constructor to enforce use of entity constructor for deserialization
     jms_serializer.unserialize_object_constructor:
         alias: jms_serializer.unserialize_object_constructor.custom
     jms_serializer.unserialize_object_constructor.custom:
         class: App\Services\JMS\EntityConstruction\ObjectConstructor
-

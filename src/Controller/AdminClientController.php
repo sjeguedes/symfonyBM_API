@@ -6,67 +6,70 @@ namespace App\Controller;
 
 use App\Entity\Client;
 use App\Entity\Partner;
-use App\Repository\ClientRepository;
-use App\Repository\PartnerRepository;
-use App\Services\JMS\Builder\SerializationBuilder;
-use App\Services\JMS\ExpressionLanguage\ExpressionLanguage;
-use App\Services\JMS\Builder\SerializationBuilderInterface;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Services\API\Builder\ResponseBuilder;
+use App\Services\API\Handler\FilterRequestHandler;
+use App\Services\Hateoas\Representation\RepresentationBuilder;
+use JMS\Serializer\SerializationContext;
+use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Class AdminClientController
  *
- * Manage all requests made by authenticated administrator (special partner) about API client data management.
+ * Manage all requests made by authenticated administrator (special partner account) about API client data management.
  *
  * @Security("is_granted('ROLE_API_ADMIN')")
  */
-class AdminClientController extends AbstractAPIController
+class AdminClientController extends AbstractController
 {
     /**
-     * Define a pagination per page limit.
+     * @var ResponseBuilder
      */
-    const PER_PAGE_LIMIT = 10;
+    private $responseBuilder;
 
     /**
-     * @var UrlGeneratorInterface
+     * @var SerializerInterface
      */
-    private $urlGenerator;
+    private $serializer;
+
+    /**
+     * @var SerializationContext
+     */
+    private $serializationContext;
 
     /**
      * AdminClientController constructor.
      *
-     * @param ExpressionLanguage            $expressionLanguage
-     * @param EntityManagerInterface        $entityManager
-     * @param RequestStack                  $requestStack
-     * @param SerializationBuilderInterface $serializationBuilder
-     * @param UrlGeneratorInterface         $urlGenerator
+     * @param ResponseBuilder $responseBuilder
      */
     public function __construct(
-        ExpressionLanguage $expressionLanguage,
-        EntityManagerInterface $entityManager,
-        RequestStack $requestStack,
-        SerializationBuilderInterface $serializationBuilder,
-        UrlGeneratorInterface $urlGenerator
+        ResponseBuilder $responseBuilder
     ) {
-        // Initialize deserialization object constructor for deserialization and expression language evaluator instances
-        /** @var SerializationBuilder $serializationBuilder */
-        $serializationBuilder->initDeserializationObjectConstructor()
-            ->initExpressionLanguageEvaluator($expressionLanguage);
-        parent::__construct($entityManager, $requestStack->getCurrentRequest(), $serializationBuilder);
-        $this->urlGenerator = $urlGenerator;
+        $this->responseBuilder = $responseBuilder;
+        $this->serializer = $responseBuilder->getSerializationProvider()->getSerializer();
+        $this->serializationContext = $responseBuilder->getSerializationProvider()->getSerializationContext();
     }
 
     /**
      * List all associated clients for a particular partner
      * with (Doctrine paginated results) or without pagination.
      *
-     * Please note using Symfony param converter is not really efficient here!
+     * Please note that Symfony param converter is used here to retrieve a Partner entity.
+     *
+     * @param FilterRequestHandler  $requestHandler
+     * @param Partner               $partner
+     * @param RepresentationBuilder $representationBuilder
+     * @param Request               $request
+     *
+     * @ParamConverter("partner", options={"mapping": {"uuid": "uuid"}})
      *
      * @return JsonResponse
      *
@@ -76,64 +79,46 @@ class AdminClientController extends AbstractAPIController
      *
      * @throws \Exception
      */
-    public function listClientsPerPartner(): JsonResponse
-    {
-        $partnerUuid = $this->request->attributes->get('uuid');
-        // TODO: check null result to throw a custom exception and return an appropriate error response
-        /** @var ClientRepository $clientRepository */
-        $clientRepository = $this->entityManager->getRepository(Client::class);
+    public function listClientsPerPartner(
+        FilterRequestHandler $requestHandler,
+        Partner $partner,
+        RepresentationBuilder $representationBuilder,
+        Request $request
+    ): JsonResponse {
+        // TODO: check null result or wrong filters values to throw a custom exception and return an appropriate error response?
+        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
+        $clientRepository = $this->getDoctrine()->getRepository(Client::class);
         // Find a set of Client entities with possible paginated results
         $clients = $clientRepository->findListByPartner(
-            $partnerUuid,
-            $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
+            $partner->getUuid()->toString(),
+            $paginationData
         );
-        // Filter results with serialization groups annotations with exclusion if necessary
-        $data = $this->serializer->serialize(
+        // Get a paginated Client collection representation
+        $paginatedCollection = $representationBuilder->createPaginatedCollection(
+            $request,
             $clients,
-            'json',
-           $this->serializationContext->setGroups(['partner:clients_list:read'])
+            Client::class,
+            $paginationData
         );
-        // Pass JSON data string to response
-        return $this->setJsonResponse($data, Response::HTTP_OK);
-    }
-
-    /**
-     * Show details about a particular client depending on a particular partner "seller".
-     *
-     * @return JsonResponse
-     *
-     * @Route({
-     *     "en": "/partners/{parUuid<[\w-]{36}>}/clients/{cliUuid<[\w-]{36}>}"
-     * }, name="show_partner_client", methods={"GET"})
-     *
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     * @throws \Exception
-     */
-    public function showPartnerClient(): JsonResponse
-    {
-        $partnerUuid = $this->request->attributes->get('parUuid');
-        $clientUuid = $this->request->attributes->get('cliUuid');
-        // TODO: check null result to throw a custom exception and return an appropriate error response
-        /** @var ClientRepository $clientRepository */
-        $clientRepository = $this->entityManager->getRepository(Client::class);
-        // Get details about a selected client by precising a specific partner
-        $client = $clientRepository->findOneByPartner(
-            $partnerUuid,
-            $clientUuid
-        );
-        // Filter result with serialization annotations if necessary
+        // Filter results with serialization rules (look at Client entity)
         $data = $this->serializer->serialize(
-            $client,
-            'json'
+            $paginatedCollection,
+            'json',
+           $this->serializationContext->setGroups(['Default', 'Client_list'])
         );
         // Pass JSON data string to response
-        return $this->setJsonResponse($data, Response::HTTP_OK);
+        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
     }
 
     /**
      * Create a new client associated to a particular requested partner "seller".
      *
-     * Please note this administrates client to create as a partner sub-resource.
+     * Please note that this administrates a new client to create as a partner sub-resource.
+     *
+     * @param FilterRequestHandler  $requestHandler,
+     * @param Partner               $partner
+     * @param Request               $request
+     * @param UrlGeneratorInterface $urlGenerator
      *
      * @return JsonResponse
      *
@@ -143,70 +128,40 @@ class AdminClientController extends AbstractAPIController
      *
      * @throws \Exception
      */
-    public function createPartnerClient(): JsonResponse
-    {
-        // TODO: check body JSON content before with exception listener to return an appropriate error response
+    public function createPartnerClient(
+        FilterRequestHandler $requestHandler,
+        Partner $partner,
+        Request $request,
+        UrlGeneratorInterface $urlGenerator
+    ): JsonResponse {
+        // TODO: check body JSON content before with exception listener to return an appropriate error response (Bad request)
+        $requestedContent = $request->getContent();
+        if (!$requestHandler->isValidJson($requestedContent)) {
+            // do stuff to return custom error response caught by kernel listener
+            throw new BadRequestHttpException('Invalid requested JSON');
+        }
         // Create a new client resource
         $client = $this->serializer->deserialize(
-            $this->request->getContent(), // data as JSON string
+            $requestedContent, // data as JSON string
             Client::class,
             'json'
         );
-        // TODO: validate Client entity with validator to return an appropriate error response
+        // TODO: validate Client entity (unique email and validity on fields) with validator to return an appropriate error response
         // Associate requested partner to new client ans save data
-        $partnerUuid = $this->request->attributes->get('uuid');
-        /** @var PartnerRepository $partnerRepository */
-        $partnerRepository = $this->entityManager->getRepository(Partner::class);
-        $requestedPartner = $partnerRepository->findOneBy(['uuid' => $partnerUuid]);
-        $requestedPartner->setUpdateDate(new \DateTimeImmutable())->addClient($client);
-        $this->entityManager->flush();
-        // Pass custom JSON data to response but response data can be empty!
-        return $this->setJsonResponse(
-            null,
+        $partner->setUpdateDate(new \DateTimeImmutable())->addClient($client);
+        $this->getDoctrine()->getManager()->flush();
+        // Pass custom data to response but response data can be empty!
+        return $this->responseBuilder->createJson(
+            'Client resource successfully created',
             Response::HTTP_CREATED,
             // headers
             [
-                'Location' => $this->urlGenerator->generate(
-                    'show_partner_client',
-                    ['parUuid' => $partnerUuid, 'cliUuid' => $client->getUuid()->toString()],
+                'Location' => $urlGenerator->generate(
+                    'show_client',
+                    ['uuid' => $client->getUuid()->toString()],
                     UrlGeneratorInterface::ABSOLUTE_URL
                 )
-            ],
-            Client::class
-        );
-    }
-
-    /**
-     * Delete a requested client associated to a particular requested partner "seller".
-     *
-     * @return Response
-     *
-     * @Route({
-     *     "en": "/partners/{parUuid<[\w-]{36}>}/clients/{cliUuid<[\w-]{36}>}"
-     * }, name="delete_partner_client", methods={"DELETE"})
-     *
-     * @throws \Exception
-     */
-    public function deletePartnerClient(): Response
-    {
-        $partnerUuid = $this->request->attributes->get('parUuid');
-        $clientUuid = $this->request->attributes->get('cliUuid');
-        // TODO: check null result to throw a custom exception and return an appropriate error response (Not found)
-        /** @var ClientRepository $clientRepository */
-        $clientRepository = $this->entityManager->getRepository(Client::class);
-        // Get requested client to delete
-        $client = $clientRepository->findOneByPartner(
-            $partnerUuid,
-            $clientUuid
-        );
-        // Get authenticated partner instance
-        $authenticatedPartner = $client->getPartner();
-        $authenticatedPartner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
-        $this->entityManager->flush();
-        // Response data must be empty in this case!
-        return new Response(
-            null,
-            Response::HTTP_NO_CONTENT
+            ]
         );
     }
 }

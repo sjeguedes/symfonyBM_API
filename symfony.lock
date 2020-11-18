@@ -426,6 +426,21 @@
     "twig/twig": {
         "version": "v3.0.3"
     },
+    "willdurand/hateoas": {
+        "version": "3.6.0"
+    },
+    "willdurand/hateoas-bundle": {
+        "version": "2.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "master",
+            "version": "2.0",
+            "ref": "34df072c6edaa61ae19afb2f3a239f272fecab87"
+        },
+        "files": [
+            "config/packages/bazinga_hateoas.yaml"
+        ]
+    },
     "zendframework/zend-code": {
         "version": "3.4.1"
     },

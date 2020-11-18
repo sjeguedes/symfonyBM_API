@@ -6,71 +6,62 @@ namespace App\Controller;
 
 use App\Entity\Client;
 use App\Entity\Partner;
-use App\Repository\ClientRepository;
-use App\Repository\PartnerRepository;
-use App\Services\JMS\Builder\SerializationBuilder;
-use App\Services\JMS\ExpressionLanguage\ExpressionLanguage;
-use App\Services\JMS\Builder\SerializationBuilderInterface;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Services\API\Builder\ResponseBuilder;
+use App\Services\API\Handler\FilterRequestHandler;
+use App\Services\Hateoas\Representation\RepresentationBuilder;
+use JMS\Serializer\SerializationContext;
+use JMS\Serializer\SerializerInterface;
 use Ramsey\Uuid\UuidInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
  * Class ClientController
  *
  * Manage all requests from simple partner user (consumer) about his clients data.
  */
-class ClientController extends AbstractAPIController
+class ClientController extends AbstractController
 {
     /**
-     * Define a pagination per page limit.
+     * @var ResponseBuilder
      */
-    const PER_PAGE_LIMIT = 10;
+    private $responseBuilder;
 
     /**
-     * @var ClientRepository
+     * @var SerializerInterface
      */
-    private $clientRepository;
+    private $serializer;
 
     /**
-     * @var UrlGeneratorInterface
+     * @var SerializationContext
      */
-    private $urlGenerator;
+    private $serializationContext;
 
     /**
      * ClientController constructor.
      *
-     * @param ExpressionLanguage            $expressionLanguage
-     * @param EntityManagerInterface        $entityManager
-     * @param RequestStack                  $requestStack
-     * @param SerializationBuilderInterface $serializationBuilder
-     * @param UrlGeneratorInterface         $urlGenerator
+     * @param ResponseBuilder $responseBuilder
      */
-    public function __construct(
-        ExpressionLanguage $expressionLanguage,
-        EntityManagerInterface $entityManager,
-        RequestStack $requestStack,
-        SerializationBuilderInterface $serializationBuilder,
-        UrlGeneratorInterface $urlGenerator
-    ) {
-        // Initialize deserialization object constructor for deserialization and expression language evaluator instances
-        /** @var SerializationBuilder $serializationBuilder */
-        $serializationBuilder->initDeserializationObjectConstructor()
-            ->initExpressionLanguageEvaluator($expressionLanguage);
-        $this->clientRepository = $entityManager->getRepository(Client::class);
-        parent::__construct($entityManager, $requestStack->getCurrentRequest(), $serializationBuilder);
-        $this->urlGenerator = $urlGenerator;
+    public function __construct(ResponseBuilder $responseBuilder)
+    {
+        $this->responseBuilder = $responseBuilder;
+        $this->serializer = $responseBuilder->getSerializationProvider()->getSerializer();
+        $this->serializationContext = $responseBuilder->getSerializationProvider()->getSerializationContext();
     }
 
     /**
      * List all associated clients for a particular authorized partner
      * with (Doctrine paginated results) or without pagination.
      *
-     * Please note using Symfony param converter is not really efficient here!
+     * @param FilterRequestHandler  $requestHandler
+     * @param RepresentationBuilder $representationBuilder
+     * @param Request               $request
      *
      * @return JsonResponse
      *
@@ -80,38 +71,53 @@ class ClientController extends AbstractAPIController
      *
      * @throws \Exception
      */
-    public function listClients(): JsonResponse
-    {
+    public function listClients(
+        FilterRequestHandler $requestHandler,
+        RepresentationBuilder $representationBuilder,
+        Request $request
+    ): JsonResponse {
+        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
+        $clientRepository = $this->getDoctrine()->getRepository(Client::class);
+        // TODO: refactor this conditional part in RequestHandler method filterList(...)
         // Get complete list when request is made by an admin, with possible paginated results
         // An admin has access to all existing clients with this role!
         if ($this->isGranted(Partner::API_ADMIN_ROLE)) {
-            $clients = $this->clientRepository->findList(
-                $this->clientRepository->getQueryBuilder(),
-                $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
+            $clients = $clientRepository->findList(
+                $clientRepository->getQueryBuilder(),
+                $paginationData
             );
         // Find a set of Client entities when request is made by a particular partner, with possible paginated results
         } else {
             /** @var UuidInterface $partnerUuid */
             $partnerUuid = $this->getUser()->getUuid();
-            $clients = $this->clientRepository->findListByPartner(
+            $clients = $clientRepository->findListByPartner(
                 $partnerUuid->toString(),
-                $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
+                $paginationData
             );
         }
+        // Get a paginated Client collection representation
+        $paginatedCollection = $representationBuilder->createPaginatedCollection(
+            $request,
+            $clients,
+            Client::class,
+            $paginationData
+        );
         // Filter results with serialization group
         $data = $this->serializer->serialize(
-            $clients,
+            $paginatedCollection,
             'json',
-            $this->serializationContext->setGroups(['partner:clients_list:read'])
+            $this->serializationContext->setGroups(['Default', 'Client_list'])
         );
         // Pass JSON data string to response
-        return $this->setJsonResponse($data, Response::HTTP_OK);
+        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
     }
 
     /**
      * Show details about a particular client.
      *
-     * Please note Symfony param converter can be used here to retrieve a Client entity.
+     * Please note that Symfony param converter is used here to retrieve a Client entity.
+     *
+     * @param Client  $client
      *
      * @return JsonResponse
      *
@@ -119,38 +125,40 @@ class ClientController extends AbstractAPIController
      *     "en": "/clients/{uuid<[\w-]{36}>}"
      * }, name="show_client", methods={"GET"})
      *
-     * @throws \Doctrine\ORM\NonUniqueResultException
      * @throws \Exception
      */
-    public function showClient(): JsonResponse
+    public function showClient(Client $client): JsonResponse
     {
-        $uuid = $this->request->attributes->get('uuid');
-        // Get details about a selected client when request is made by an admin
-        // An admin has access to all existing clients details with this role!
-        if ($this->isGranted(Partner::API_ADMIN_ROLE)) {
-            $client = $this->clientRepository->findOneBy(['uuid' => $uuid]);
         // Find partner client details
-        } else {
-            // TODO: check null result to throw a custom exception and return an appropriate error response
+        // An admin has access to all existing clients details with this role!
+        if (!$this->isGranted(Partner::API_ADMIN_ROLE)) {
+            // TODO: check false result to throw a custom exception and return an appropriate error response
+            // TODO: Make a Voter service instead
             // Get authenticated partner to match client to show
-            /** @var UuidInterface $partnerUuid */
-            $partnerUuid = $this->getUser()->getUuid();
-            $client = $this->clientRepository->findOneByPartner(
-                $partnerUuid->toString(),
-                $uuid
-            );
+            /** @var Partner $authenticatedPartner */
+            $authenticatedPartner = $this->getUser();
+            // Check partner and client relation with extra lazy fetch
+            if (!$authenticatedPartner->getClients()->contains($client)) {
+                // do stuff to return custom error response caught by kernel listener
+                throw new AccessDeniedException('Show action on client resource not allowed');
+            }
         }
         // Filter result with serialization annotation
         $data = $this->serializer->serialize(
             $client,
-            'json'
+            'json',
+            $this->serializationContext->setGroups(['Default', 'Client_detail'])
         );
         // Pass JSON data string to response
-        return $this->setJsonResponse($data, Response::HTTP_OK);
+        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
     }
 
     /**
      * Create a new client associated to authenticated partner.
+     *
+     * @param FilterRequestHandler  $requestHandler
+     * @param Request               $request
+     * @param UrlGeneratorInterface $urlGenerator
      *
      * @return JsonResponse
      *
@@ -160,42 +168,51 @@ class ClientController extends AbstractAPIController
      *
      * @throws \Exception
      */
-    public function createClient(): JsonResponse
-    {
-        // TODO: check body JSON content before with exception listener to return an appropriate error response (Not found))
+    public function createClient(
+        FilterRequestHandler $requestHandler,
+        Request $request,
+        UrlGeneratorInterface $urlGenerator
+    ): JsonResponse {
+        // TODO: check body JSON content before with exception listener to return an appropriate error response (Bad request)
+        $requestedContent = $request->getContent();
+        if (!$requestHandler->isValidJson($requestedContent)) {
+            // do stuff to return custom error response caught by kernel listener
+            throw new BadRequestHttpException('Invalid requested JSON');
+        }
         // Create a new client resource
         $client = $this->serializer->deserialize(
-            $this->request->getContent(), // data as JSON string
+            $requestedContent, // data as JSON string
             Client::class,
             'json'
         );
-        // TODO: validate Client entity with validator to return an appropriate error response
+        // TODO: validate Client entity (unique email and validity on fields) with validator to return an appropriate error response
         // Associate authenticated partner to new client ans save data
-        /** @var UuidInterface $partnerUuid */
-        $partnerUuid = $this->getUser()->getUuid();
-        /** @var PartnerRepository $partnerRepository */
-        $partnerRepository = $this->entityManager->getRepository(Partner::class);
-        $authenticatedPartner = $partnerRepository->findOneBy(['uuid' => $partnerUuid->toString()]);
+        /** @var Partner $authenticatedPartner */
+        $authenticatedPartner = $this->getUser();
         $authenticatedPartner->setUpdateDate(new \DateTimeImmutable())->addClient($client);
-        $this->entityManager->flush();
-        // Pass custom JSON data to response but response data can be empty!
-        return $this->setJsonResponse(
-            null,
+        $this->getDoctrine()->getManager()->flush();
+        // Pass custom data to response but response data can be empty!
+        return $this->responseBuilder->createJson(
+            'Client resource successfully created',
             Response::HTTP_CREATED,
             // headers
             [
-                'Location' => $this->urlGenerator->generate(
+                'Location' => $urlGenerator->generate(
                     'show_client',
                     ['uuid' => $client->getUuid()->toString()],
                     UrlGeneratorInterface::ABSOLUTE_URL
                 )
-            ],
-            Client::class
+            ]
         );
     }
 
     /**
      * Delete a client associated to authenticated partner.
+     * An administrator can delete any client.
+     *
+     * Please note that Symfony param converter is used here to retrieve a Client entity.
+     *
+     * @param Client $client
      *
      * @return Response
      *
@@ -205,24 +222,28 @@ class ClientController extends AbstractAPIController
      *
      * @throws \Exception
      */
-    public function deleteClient(): Response
+    public function deleteClient(Client $client): Response
     {
-        $uuid = $this->request->attributes->get('uuid');
-        // TODO: check null result to throw a custom exception and return an appropriate error response (Not found)
-        // Get authenticated partner to match client to remove and save deletion
-        /** @var UuidInterface $partnerUuid */
-        $partnerUuid = $this->getUser()->getUuid();
-        // Get requested client to delete
-        $client = $this->clientRepository->findOneByPartner(
-            $partnerUuid->toString(),
-            $uuid
-        );
-        // Get authenticated partner instance
-        $authenticatedPartner = $client->getPartner();
-        $authenticatedPartner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
-        $this->entityManager->flush();
-        // Response data must be empty in this case!
-        return new Response(
+        // An admin has access to all existing clients details with this role!
+        $partner = $client->getPartner();
+        // A simple partner can only delete his clients only
+        if (!$this->isGranted(Partner::API_ADMIN_ROLE)) {
+            // TODO: check false result to throw a custom exception and return an appropriate error response
+            // TODO: Make a Voter service instead
+            // Get authenticated partner to match client to remove and save deletion
+            /** @var Partner $authenticatedPartner */
+            $authenticatedPartner = $this->getUser();
+            // Check partner and client relation with extra lazy fetch
+            if (!$authenticatedPartner->getClients()->contains($client)) {
+                // do stuff to return custom error response caught by kernel listener
+                throw new AccessDeniedException('Deletion action on client resource not allowed');
+            }
+            $partner = $authenticatedPartner;
+        }
+        $partner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
+        $this->getDoctrine()->getManager()->flush();
+        // Return a simple response without data!
+        return $this->responseBuilder->create(
             null,
             Response::HTTP_NO_CONTENT
         );

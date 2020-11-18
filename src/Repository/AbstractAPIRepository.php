@@ -57,33 +57,22 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
      * @param int          $page
      * @param int          $limit
      *
-     * @return array
+     * @return \IteratorAggregate|Paginator
      *
      * @see https://www.doctrine-project.org/projects/doctrine-orm/en/2.7/tutorials/pagination.html
      */
-    public function filterWithPagination(QueryBuilder $queryBuilder, int $page, int $limit): array
+    public function filterWithPagination(QueryBuilder $queryBuilder, int $page, int $limit): \IteratorAggregate
     {
-        $query = $queryBuilder->getQuery()
+        $query = $queryBuilder
             // Define offset value
             ->setFirstResult(($page - 1) * $limit)
             // Pass limit value
-            ->setMaxResults($limit);
+            ->setMaxResults($limit)
+            // Get complete query
+            ->getQuery();
         // Paginator can be returned as an IteratorAggregate implementation.
-        // An array is returned with "iterator_to_array(new Paginator($query))" for APi needs.
-        return iterator_to_array(new Paginator($query));
+        return new Paginator($query);
     }
-
-    /**
-     * Find one associated entity (Client, Phone, ...) depending on a particular partner uuid string parameter.
-     *
-     * @param string $partnerUuid
-     * @param string $entityUuid
-     *
-     * @return object|null a particular entity which can be a Phone, Client entity instance
-     *
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     */
-    abstract public function findOneByPartner(string $partnerUuid, string $entityUuid): ?object;
 
     /**
      * Find all associated entities (client, Phone, ...) depending on a particular partner uuid string parameter
@@ -92,24 +81,29 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
      * @param string     $partnerUuid
      * @param array|null $paginationData
      *
-     * @return array
+     * @return \IteratorAggregate|Paginator
      */
-    abstract public function findListByPartner(string $partnerUuid, ?array $paginationData): array;
+    abstract public function findListByPartner(string $partnerUuid, ?array $paginationData): \IteratorAggregate;
 
     /**
      * Find a set of entities with offset and limit integers parameters with Doctrine paginated results
      * or all results.
      *
+     * Please note that this query is used for hateoas collection representation.
+     *
      * @param QueryBuilder $queryBuilder,
      * @param array|null   $paginationData
      *
-     * @return array
+     * @return \IteratorAggregate|Paginator
      */
-    public function findList(QueryBuilder $queryBuilder, ?array $paginationData): array {
+    public function findList(QueryBuilder $queryBuilder, ?array $paginationData): \IteratorAggregate
+    {
+        // Return selected results if some exist.
         if (!\is_null($paginationData)) {
             return $this->filterWithPagination($queryBuilder, $paginationData['page'], $paginationData['per_page']);
         }
-        return $this->findAll();
+        // Return results with default page 1 if some exist.
+        return new Paginator($queryBuilder->getQuery());
     }
 
     /**
@@ -120,31 +114,5 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
     public function getQueryBuilder(): QueryBuilder
     {
         return $this->createQueryBuilder(self::DATABASE_ENTITIES_ALIASES[$this->getEntityName()]);
-    }
-
-    /**
-     * Get one result for a particular query.
-     *
-     * @param QueryBuilder $queryBuilder
-     *
-     * @return object|null
-     *
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     */
-    public function getQueryResult(QueryBuilder $queryBuilder): ?object
-    {
-        return $queryBuilder->getQuery()->getOneOrNullResult();
-    }
-
-    /**
-     * Get results for a particular query.
-     *
-     * @param QueryBuilder $queryBuilder
-     *
-     * @return array
-     */
-    public function getQueryResults(QueryBuilder $queryBuilder): array
-    {
-        return $queryBuilder->getQuery()->getResult();
     }
 }

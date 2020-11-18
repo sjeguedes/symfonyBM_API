@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Client;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * Class ClientRepository
+ *
+ * Manage Client database queries.
  */
 class ClientRepository extends AbstractAPIRepository
 {
@@ -23,37 +26,15 @@ class ClientRepository extends AbstractAPIRepository
     }
 
     /**
-     * Find one associated Client entity depending on a particular partner uuid string parameter.
-     *
-     * @param string $partnerUuid
-     * @param string $entityUuid
-     *
-     * @return Client|null
-     *
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     */
-    public function findOneByPartner(string $partnerUuid, string $entityUuid): ?object
-    {
-        return $this->createQueryBuilder('cli')
-            ->leftJoin('cli.partner', 'par', 'WITH', 'par.uuid = cli.partner')
-            ->where('par.uuid = ?1')
-            ->andWhere('cli.uuid = ?2')
-            ->setParameter(1, $partnerUuid)
-            ->setParameter(2, $entityUuid)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
-    /**
      * Find a set of Client entities results depending on a particular partner uuid parameter,
      * with possible paginated results.
      *
      * @param string     $partnerUuid
      * @param array|null $paginationData
      *
-     * @return array|Client[]
+     * @return \IteratorAggregate|Paginator
      */
-    public function findListByPartner(string $partnerUuid, ?array $paginationData): array
+    public function findListByPartner(string $partnerUuid, ?array $paginationData): \IteratorAggregate
     {
         $queryBuilder = $this->createQueryBuilder('cli')
             ->leftJoin('cli.partner', 'par', 'WITH', 'par.uuid = cli.partner')
@@ -61,11 +42,9 @@ class ClientRepository extends AbstractAPIRepository
             ->setParameter(1, $partnerUuid);
         // Get results with a pagination
         if (!\is_null($paginationData)) {
-            return $this->findList($queryBuilder, $paginationData);
+            return $this->filterWithPagination($queryBuilder, $paginationData['page'], $paginationData['per_page']);
         }
-        // Get all results
-        return $queryBuilder
-            ->getQuery()
-            ->getResult();
+        // Get all results as \IteratorAggregate Doctrine Paginator implementation
+        return new Paginator($queryBuilder->setFirstResult(0)->getQuery());
     }
 }

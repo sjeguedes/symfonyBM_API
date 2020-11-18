@@ -8,6 +8,7 @@ use App\Repository\PartnerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Hateoas\Configuration\Annotation as Hateoas;
 use JMS\Serializer\Annotation as Serializer;
 use Lexik\Bundle\JWTAuthenticationBundle\Security\User\JWTUserInterface;
 use Ramsey\Uuid\Uuid;
@@ -18,8 +19,43 @@ use Symfony\Component\Security\Core\User\UserInterface;
  * Class Partner
  *
  * Define an API consumer which has associated clients.
- * Please note partner can have access to a particular list of phones
+ * Please note that partner can have access to a particular list of phones
  * event if it is not needed to run application.
+ *
+ * @Hateoas\Relation(
+ *     "self",
+ *     href=@Hateoas\Route(
+ *          "show_partner",
+ *          parameters={"uuid"="expr(object.getUuid().toString())"},
+ *          absolute=true
+ *     )
+ * )
+ * @Hateoas\Relation(
+ *      "offers",
+ *      href=@Hateoas\Route(
+ *          "list_offers_per_partner",
+ *          parameters={"uuid"="expr(object.getUuid().toString())"},
+ *          absolute=true
+ *     ),
+ *    exclusion=@Hateoas\Exclusion(excludeIf="expr(not is_granted('ROLE_API_ADMIN'))")
+ * )
+ * @Hateoas\Relation(
+ *      "clients",
+ *      href=@Hateoas\Route(
+ *          "list_clients_per_partner",
+ *          parameters={"uuid"="expr(object.getUuid().toString())"},
+ *          absolute=true
+ *     ),
+ *     exclusion=@Hateoas\Exclusion(excludeIf="expr(not is_granted('ROLE_API_ADMIN'))")
+ * )
+ * @Hateoas\Relation(
+ *      "clients",
+ *      href=@Hateoas\Route(
+ *          "list_clients",
+ *          absolute=true
+ *     ),
+ *     exclusion=@Hateoas\Exclusion(excludeIf="expr(is_granted('ROLE_API_ADMIN'))")
+ * )
  *
  * @ORM\Entity(repositoryClass=PartnerRepository::class)
  * @ORM\Table(name="partners")
@@ -51,7 +87,7 @@ class Partner implements UserInterface, JWTUserInterface
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
      *
-     * @Serializer\Groups({"admin:partner_clients_list:read"})
+     * @Serializer\Groups({"Partner_list", "Partner_detail"})
      * @Serializer\Type("string")
      */
     private $uuid;
@@ -61,10 +97,7 @@ class Partner implements UserInterface, JWTUserInterface
      *
      * @ORM\Column(type="string", length=45)
      *
-     * @Serializer\Groups({"admin:partner_clients_list:read"})
-     * @Serializer\Exclude(
-     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
-     * )
+     * @Serializer\Groups({"Partner_detail"})
      */
     private $type;
 
@@ -73,7 +106,7 @@ class Partner implements UserInterface, JWTUserInterface
      *
      * @ORM\Column(type="string", length=45)
      *
-     * @Serializer\Groups({"admin:partner_clients_list:read"})
+     * @Serializer\Groups({"Partner_list", "Partner_detail"})
      */
     private $username;
 
@@ -82,7 +115,7 @@ class Partner implements UserInterface, JWTUserInterface
      *
      * @ORM\Column(type="string", length=320, unique=true)
      *
-     * @Serializer\Groups({"admin:partner_clients_list:read"})
+     * @Serializer\Groups({"Partner_list", "Partner_detail"})
      */
     private $email;
 
@@ -91,9 +124,7 @@ class Partner implements UserInterface, JWTUserInterface
      *
      * @ORM\Column(type="string", length=98, unique=true)
      *
-     * @Serializer\Exclude(
-     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
-     * )
+     * @Serializer\Exclude
      */
     private $password;
 
@@ -107,9 +138,7 @@ class Partner implements UserInterface, JWTUserInterface
      *
      * @ORM\Column(type="array")
      *
-     * @Serializer\Exclude(
-     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
-     * )
+     * @Serializer\Groups({"Partner_detail"})
      */
     private $roles;
 
@@ -117,6 +146,8 @@ class Partner implements UserInterface, JWTUserInterface
      * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable")
+     *
+     * @Serializer\Groups({"Partner_list", "Partner_detail"})
      */
     private $creationDate;
 
@@ -125,9 +156,7 @@ class Partner implements UserInterface, JWTUserInterface
      *
      * @ORM\Column(type="datetime_immutable", nullable=true)
      *
-     * @Serializer\Exclude(
-     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
-     * )
+     * @Serializer\Groups({"Partner_detail"})
      */
     private $updateDate;
 
@@ -136,20 +165,16 @@ class Partner implements UserInterface, JWTUserInterface
      *
      * @ORM\OneToMany(targetEntity=Offer::class, mappedBy="partner", cascade={"persist", "remove"}, orphanRemoval=true)
      *
-     * @Serializer\Exclude(
-     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
-     * )
+     * @Serializer\Exclude
      */
     private $offers;
 
     /**
      * @var Collection|Client[]
      *
-     * @ORM\OneToMany(targetEntity=Client::class, mappedBy="partner", cascade={"persist", "remove"}, orphanRemoval=true)
+     * @ORM\OneToMany(targetEntity=Client::class, mappedBy="partner", cascade={"persist", "remove"}, orphanRemoval=true, fetch="EXTRA_LAZY")
      *
-     * @Serializer\Exclude(
-     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
-     * )
+     * @Serializer\Exclude
      */
     private $clients;
 

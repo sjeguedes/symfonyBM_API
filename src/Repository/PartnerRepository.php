@@ -12,8 +12,10 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * Class PartnerRepository
+ *
+ * Manage Partner database queries.
  */
-class PartnerRepository extends ServiceEntityRepository implements UserLoaderInterface
+class PartnerRepository extends AbstractAPIRepository implements UserLoaderInterface
 {
     /**
      * PartnerRepository constructor.
@@ -26,7 +28,15 @@ class PartnerRepository extends ServiceEntityRepository implements UserLoaderInt
     }
 
     /**
-     * Find one partner by its username.
+     * {@inheritdoc}
+     */
+    public function findListByPartner(string $partnerUuid, ?array $paginationData): \IteratorAggregate
+    {
+        // Not necessary for this repository
+    }
+
+    /**
+     * Find one partner by his username.
      *
      * @param string $username
      *

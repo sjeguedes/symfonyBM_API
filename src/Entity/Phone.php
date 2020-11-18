@@ -8,6 +8,7 @@ use App\Repository\PhoneRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Hateoas\Configuration\Annotation as Hateoas;
 use JMS\Serializer\Annotation as Serializer;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -17,10 +18,26 @@ use Ramsey\Uuid\UuidInterface;
  *
  * Define a particular phone with some features to distinguish it (e.g. brand, model, color, etc...).
  *
+ * @Hateoas\Relation(
+ *     "self",
+ *     href=@Hateoas\Route(
+ *          "show_phone",
+ *          parameters={"uuid"="expr(object.getUuid().toString())"},
+ *          absolute=true
+ *     )
+ * )
+ * @Hateoas\Relation(
+ *      "offers",
+ *      href=@Hateoas\Route(
+ *          "list_offers_per_phone",
+ *          parameters={"uuid"="expr(object.getUuid().toString())"},
+ *          absolute=true
+ *     ),
+ *    exclusion=@Hateoas\Exclusion(excludeIf="expr(not is_granted('ROLE_API_ADMIN'))")
+ * )
+ *
  * @ORM\Entity(repositoryClass=PhoneRepository::class)
  * @ORM\Table(name="phones")
- *
- * @see https://stackoverflow.com/questions/21916450/how-do-i-create-a-custom-exclusion-strategy-for-jms-serializer-that-allows-me-to
  */
 class Phone
 {
@@ -41,7 +58,7 @@ class Phone
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
      *
-     * @Serializer\Groups({"partner:phones_list:read"})
+     * @Serializer\Groups({"Phone_list", "Phone_detail"})
      * @Serializer\Type("string")
      */
     private $uuid;
@@ -50,6 +67,8 @@ class Phone
      * @var string
      *
      * @ORM\Column(type="string", length=45)
+     *
+     * @Serializer\Groups({"Phone_detail", "Phone_detail"})
      */
     private $type;
 
@@ -58,7 +77,7 @@ class Phone
      *
      * @ORM\Column(type="string", length=45)
      *
-     * @Serializer\Groups({"partner:phones_list:read"})
+     * @Serializer\Groups({"Phone_list", "Phone_detail"})
      */
     private $brand;
 
@@ -67,7 +86,7 @@ class Phone
      *
      * @ORM\Column(type="string", length=45, unique=true)
      *
-     * @Serializer\Groups({"partner:phones_list:read"})
+     * @Serializer\Groups({"Phone_list", "Phone_detail"})
      */
     private $model;
 
@@ -75,6 +94,8 @@ class Phone
      * @var string
      *
      * @ORM\Column(type="string", length=45)
+     *
+     * @Serializer\Groups({"Phone_detail"})
      */
     private $color;
 
@@ -82,6 +103,8 @@ class Phone
      * @var string
      *
      * @ORM\Column(type="text")
+     *
+    @Serializer\Groups({"Phone_detail"})
      */
     private $description;
 
@@ -90,7 +113,7 @@ class Phone
      *
      * @ORM\Column(type="decimal", precision=6, scale=2)
      *
-     * @Serializer\Groups({"partner:phones_list:read"})
+     * @Serializer\Groups({"Phone_list", "Phone_detail"})
      * @Serializer\Type("double")
      */
     private $price;
@@ -100,9 +123,7 @@ class Phone
      *
      * @ORM\OneToMany(targetEntity=Offer::class, mappedBy="phone", cascade={"persist", "remove"}, orphanRemoval=true)
      *
-     * @Serializer\Exclude(
-     *     if="!isRequestAllowed(service('request_stack').getCurrentRequest().getRequestUri(), object)"
-     * )
+     * @Serializer\Exclude
      */
     private $offers;
 
@@ -111,7 +132,7 @@ class Phone
      *
      * @ORM\Column(type="datetime_immutable")
      *
-     * @Serializer\Groups({"partner:phones_list:read"})
+     * @Serializer\Groups({"Phone_list", "Phone_detail"})
      */
     private $creationDate;
 
@@ -119,6 +140,8 @@ class Phone
      * @var \DateTimeImmutable|null
      *
      * @ORM\Column(type="datetime_immutable", nullable=true)
+     *
+     * @Serializer\Groups({"Phone_detail"})
      */
     private $updateDate;
 

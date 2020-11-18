@@ -6,14 +6,15 @@ namespace App\Controller;
 
 use App\Entity\Partner;
 use App\Entity\Phone;
-use App\Repository\PhoneRepository;
-use App\Services\JMS\Builder\SerializationBuilder;
-use App\Services\JMS\ExpressionLanguage\ExpressionLanguage;
-use App\Services\JMS\Builder\SerializationBuilderInterface;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Services\API\Builder\ResponseBuilder;
+use App\Services\API\Handler\FilterRequestHandler;
+use App\Services\Hateoas\Representation\RepresentationBuilder;
+use JMS\Serializer\SerializationContext;
+use JMS\Serializer\SerializerInterface;
 use Ramsey\Uuid\UuidInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -22,43 +23,43 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * Manage all requests simple partner user (consumer) about his selected phones data.
  */
-class PhoneController extends AbstractAPIController
+class PhoneController extends AbstractController
 {
     /**
-     * Define a pagination per page limit.
+     * @var ResponseBuilder
      */
-    const PER_PAGE_LIMIT = 10;
+    private $responseBuilder;
 
     /**
-     * @var PhoneRepository
+     * @var SerializerInterface
      */
-    private $phoneRepository;
+    private $serializer;
+
+    /**
+     * @var SerializationContext
+     */
+    private $serializationContext;
 
     /**
      * PhoneController constructor.
      *
-     * @param ExpressionLanguage            $expressionLanguage
-     * @param EntityManagerInterface        $entityManager
-     * @param RequestStack                  $requestStack
-     * @param SerializationBuilderInterface $serializationBuilder
+     * @param ResponseBuilder $responseBuilder
      */
-    public function __construct(
-        ExpressionLanguage $expressionLanguage,
-        EntityManagerInterface $entityManager,
-        RequestStack $requestStack,
-        SerializationBuilderInterface $serializationBuilder
-    ) {
-        // Initialize an expression language evaluator instance
-        /** @var SerializationBuilder $serializationBuilder */
-        $serializationBuilder->initExpressionLanguageEvaluator($expressionLanguage);
-        $this->phoneRepository = $entityManager->getRepository(Phone::class);
-        parent::__construct($entityManager, $requestStack->getCurrentRequest(), $serializationBuilder);
+    public function __construct(ResponseBuilder $responseBuilder)
+    {
+        $this->responseBuilder = $responseBuilder;
+        $this->serializer = $responseBuilder->getSerializationProvider()->getSerializer();
+        $this->serializationContext = $responseBuilder->getSerializationProvider()->getSerializationContext();
     }
 
     /**
      * List all available phones for a particular authenticated partner
      * or all the referenced products (catalog filter or when request is made by an admin)
      * with (Doctrine paginated results) or without pagination.
+     *
+     * @param FilterRequestHandler  $requestHandler
+     * @param RepresentationBuilder $representationBuilder
+     * @param Request               $request
      *
      * @return JsonResponse
      *
@@ -68,39 +69,54 @@ class PhoneController extends AbstractAPIController
      *
      * @throws \Exception
      */
-    public function listPhones(): JsonResponse
-    {
+    public function listPhones(
+        FilterRequestHandler $requestHandler,
+        RepresentationBuilder $representationBuilder,
+        Request $request
+    ): JsonResponse {
+        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
+        $phoneRepository = $this->getDoctrine()->getRepository(Phone::class);
+        // TODO: refactor this conditional part in RequestHandler method filterList(...)
         // Get catalog complete list with filter or when request is made by an admin, with possible paginated results
         // An admin has access to all existing clients with this role!
-        if ($this->isFullListRequested($this->request) || $this->isGranted(Partner::API_ADMIN_ROLE)) {
-            $phones = $this->phoneRepository->findList(
-                $this->phoneRepository->getQueryBuilder(),
-                $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
+        if ($requestHandler->isFullListRequested($request) || $this->isGranted(Partner::API_ADMIN_ROLE)) {
+            $phones = $phoneRepository->findList(
+                $phoneRepository->getQueryBuilder(),
+                $paginationData
             );
         // Find a set of Phone entities when request is made by a particular partner, with possible paginated results
         } else {
             // Get partner uuid from authenticated user
             /** @var UuidInterface $partnerUuid */
             $partnerUuid = $this->getUser()->getUuid();
-            $phones = $this->phoneRepository->findListByPartner(
+            $phones = $phoneRepository->findListByPartner(
                 $partnerUuid->toString(),
-                $this->filterPaginationData($this->request, self::PER_PAGE_LIMIT)
+                $paginationData
             );
         }
-        // Filter results with serialization group
-        $data = $this->serializer->serialize(
+        // Get a paginated Phone collection representation
+        $paginatedCollection = $representationBuilder->createPaginatedCollection(
+            $request,
             $phones,
+            Phone::class,
+            $paginationData
+        );
+        // Filter results with serialization rules (look at Phone entity)
+        $data = $this->serializer->serialize(
+            $paginatedCollection,
             'json',
-            $this->serializationContext->setGroups(['partner:phones_list:read'])
+            $this->serializationContext->setGroups(['Default', 'Phone_list'])
         );
         // Pass JSON data string to response
-        return $this->setJsonResponse($data, Response::HTTP_OK);
+        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
     }
 
     /**
-     * Show details about a particular phone provided by complete available list (catalog .
+     * Show details about a particular phone provided by complete available list (catalog).
      *
-     * Please note Symfony param converter can be used here to retrieve a Phone entity.
+     * Please note that Symfony param converter is used here to retrieve a Phone entity.
+     *
+     * @param Phone $phone
      *
      * @return JsonResponse
      *
@@ -110,18 +126,17 @@ class PhoneController extends AbstractAPIController
      *
      * @throws \Exception
      */
-    public function showPhone(): JsonResponse
+    public function showPhone(Phone $phone): JsonResponse
     {
-        $uuid = $this->request->attributes->get('uuid');
-        // Get phone details (from catalog at this time)
-        $phone = $this->phoneRepository->findOneBy(['uuid' => $uuid]);
+        // Get serialized phone details (from catalog at this time)
         // Filter result with serialization annotation
         $data = $this->serializer->serialize(
             $phone,
-            'json'
-            // Exclude Offer collection since it is not interesting for a simple partner!
+            'json',
+            $this->serializationContext->setGroups(['Default', 'Phone_detail'])
+            // Exclude Offer collection since it is not interesting as a simple partner!
         );
         // Pass JSON data string to response
-        return $this->setJsonResponse($data, Response::HTTP_OK);
+        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
     }
 }
