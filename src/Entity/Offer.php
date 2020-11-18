@@ -6,6 +6,8 @@ namespace App\Entity;
 
 use App\Repository\OfferRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Hateoas\Configuration\Annotation as Hateoas;
+use JMS\Serializer\Annotation as Serializer;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -14,6 +16,33 @@ use Ramsey\Uuid\UuidInterface;
  *
  * Define which phones would be associated to partners
  * even if it is not specified in application requirements.
+ *
+ * @Hateoas\Relation(
+ *     "self",
+ *     href=@Hateoas\Route(
+ *          "show_offer",
+ *          parameters={"uuid"="expr(object.getUuid().toString())"},
+ *          absolute=true
+ *     )
+ * )
+ * @Hateoas\Relation(
+ *      "partner",
+ *      href=@Hateoas\Route(
+ *          "show_partner",
+ *          parameters={"uuid"="expr(object.getPartner().getUuid().toString())"},
+ *          absolute=true
+ *      ),
+ *     embedded="expr(object.getPartner())"
+ * )
+ * @Hateoas\Relation(
+ *      "phone",
+ *      href=@Hateoas\Route(
+ *          "show_phone",
+ *          parameters={"uuid"="expr(object.getPhone().getUuid().toString())"},
+ *          absolute=true
+ *     ),
+ *     embedded="expr(object.getPhone())"
+ * )
  *
  * @ORM\Entity(repositoryClass=OfferRepository::class)
  * @ORM\Table(name="offers")
@@ -25,6 +54,9 @@ class Offer
      *
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
+     *
+     * @Serializer\Type("string")
+     * @Serializer\Groups({"Offer_list", "Offer_detail"})
      */
     private $uuid;
 
@@ -33,6 +65,8 @@ class Offer
      *
      * @ORM\ManyToOne(targetEntity=Partner::class, inversedBy="offers")
      * @ORM\JoinColumn(name="partner_uuid", referencedColumnName="uuid")
+     *
+     * @Serializer\Exclude
      */
     private $partner;
 
@@ -41,6 +75,8 @@ class Offer
      *
      * @ORM\ManyToOne(targetEntity=Phone::class, inversedBy="offers")
      * @ORM\JoinColumn(name="phone_uuid", referencedColumnName="uuid")
+     *
+     * @Serializer\Exclude
      */
     private $phone;
 
@@ -48,6 +84,8 @@ class Offer
      * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable")
+     *
+     * @Serializer\Groups({"Offer_list", "Offer_detail"})
      */
     private $creationDate;
 
@@ -57,6 +95,8 @@ class Offer
     public function __construct()
     {
         $this->uuid = Uuid::uuid4();
+        $this->creationDate = new \DateTimeImmutable();
+        // No need to have an update date since an offer deletion must be chosen if necessary!
     }
 
     /**

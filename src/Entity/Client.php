@@ -6,6 +6,8 @@ namespace App\Entity;
 
 use App\Repository\ClientRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Hateoas\Configuration\Annotation as Hateoas;
+use JMS\Serializer\Annotation as Serializer;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -14,13 +16,51 @@ use Ramsey\Uuid\UuidInterface;
  *
  * Define an individual or professional client associated to a partner.
  *
+ * @Hateoas\Relation(
+ *     "self",
+ *     href=@Hateoas\Route(
+ *          "show_client",
+ *          parameters={"uuid"="expr(object.getUuid().toString())"},
+ *          absolute=true
+ *      )
+ * )
+ * @Hateoas\Relation(
+ *      "create",
+ *      href=@Hateoas\Route(
+ *          "create_client",
+ *          absolute=true
+ *      )
+ * )
+ * @Hateoas\Relation(
+ *      "delete",
+ *      href=@Hateoas\Route(
+ *          "delete_client",
+ *          parameters={"uuid"="expr(object.getUuid().toString())"},
+ *          absolute=true
+ *      )
+ * )
+ * @Hateoas\Relation(
+ *      "partner",
+ *      href=@Hateoas\Route(
+ *          "show_partner",
+ *          parameters={"uuid"="expr(object.getPartner().getUuid().toString())"},
+ *          absolute=true
+ *     )
+ * )
+ *
  * @ORM\Entity(repositoryClass=ClientRepository::class)
  * @ORM\Table(name="clients")
  */
 class Client
 {
+    /**
+     * Define an individual type label.
+     */
     const INDIVIDUAL_TYPE = 'Particulier';
 
+    /**
+     * Define a professional type label.
+     */
     const PROFESSIONAL_TYPE = 'Professionnel';
 
     /**
@@ -36,6 +76,9 @@ class Client
      *
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
+     *
+     * @Serializer\Groups({"Client_list", "Client_detail"})
+     * @Serializer\Type("string")
      */
     private $uuid;
 
@@ -43,6 +86,8 @@ class Client
      * @var string
      *
      * @ORM\Column(type="string", length=45)
+     *
+     * @Serializer\Groups({"Client_detail"})
      */
     private $type;
 
@@ -50,6 +95,8 @@ class Client
      * @var string
      *
      * @ORM\Column(type="string", length=45)
+     *
+     * @Serializer\Groups({"Client_list", "Client_detail"})
      */
     private $name;
 
@@ -57,14 +104,18 @@ class Client
      * @var string
      *
      * @ORM\Column(type="string", length=320, unique=true)
+     *
+     * @Serializer\Groups({"Client_list", "Client_detail"})
      */
     private $email;
 
     /**
      * @var Partner
      *
-     * @ORM\ManyToOne(targetEntity=Partner::class, inversedBy="clients")
+     * @ORM\ManyToOne(targetEntity=Partner::class, cascade={"persist"}, inversedBy="clients")
      * @ORM\JoinColumn(name="partner_uuid", referencedColumnName="uuid", nullable=false)
+     *
+     * @Serializer\Exclude
      */
     private $partner;
 
@@ -72,6 +123,8 @@ class Client
      * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable")
+     *
+     * @Serializer\Groups({"Client_list", "Client_detail"})
      */
     private $creationDate;
 
@@ -79,6 +132,8 @@ class Client
      * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable", nullable=true)
+     *
+     * @Serializer\Groups({"Client_detail"})
      */
     private $updateDate;
 
@@ -88,6 +143,8 @@ class Client
     public function __construct()
     {
         $this->uuid = Uuid::uuid4();
+        $this->creationDate = new \DateTimeImmutable();
+        $this->updateDate = new \DateTimeImmutable();
     }
 
     /**

@@ -67,7 +67,7 @@ abstract class BaseFixture extends Fixture
     /**
      * Get custom indexes for nested arrays.
      *
-     * Please note this is used for Doctrine Proxy objects references.
+     * Please note that this is used for Doctrine Proxy objects references.
      *
      * @param array $elements
      *

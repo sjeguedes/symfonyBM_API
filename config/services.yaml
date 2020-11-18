@@ -4,6 +4,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
+    api_and_version_path_prefix: 'api/v1'
 
 services:
     # default configuration for services in *this* file
@@ -25,3 +26,19 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    # add JMS event subscriber for hateoas collection representation
+    App\Services\Hateoas\Event\Subscriber\CollectionRepresentationSubscriber:
+        tags:
+            - jms_serializer.event_subscriber
+
+    # add a Lexik listener to customise JWT payload
+    App\Services\Lexik\Listener\JWTCreatedListener:
+        tags:
+            - {name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_created}
+
+    # add a JMS object constructor to enforce use of entity constructor for deserialization
+    jms_serializer.unserialize_object_constructor:
+        alias: jms_serializer.unserialize_object_constructor.custom
+    jms_serializer.unserialize_object_constructor.custom:
+        class: App\Services\JMS\EntityConstruction\ObjectConstructor

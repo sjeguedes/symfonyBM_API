@@ -8,33 +8,73 @@ use App\Repository\PartnerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Hateoas\Configuration\Annotation as Hateoas;
+use JMS\Serializer\Annotation as Serializer;
+use Lexik\Bundle\JWTAuthenticationBundle\Security\User\JWTUserInterface;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
-use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
-use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Security\Core\User\UserProviderInterface;
 
 /**
  * Class Partner
  *
  * Define an API consumer which has associated clients.
- * Please note partner can have access to a particular list of phones
+ * Please note that partner can have access to a particular list of phones
  * event if it is not needed to run application.
+ *
+ * @Hateoas\Relation(
+ *     "self",
+ *     href=@Hateoas\Route(
+ *          "show_partner",
+ *          parameters={"uuid"="expr(object.getUuid().toString())"},
+ *          absolute=true
+ *     )
+ * )
+ * @Hateoas\Relation(
+ *      "offers",
+ *      href=@Hateoas\Route(
+ *          "list_offers_per_partner",
+ *          parameters={"uuid"="expr(object.getUuid().toString())"},
+ *          absolute=true
+ *     ),
+ *    exclusion=@Hateoas\Exclusion(excludeIf="expr(not is_granted('ROLE_API_ADMIN'))")
+ * )
+ * @Hateoas\Relation(
+ *      "clients",
+ *      href=@Hateoas\Route(
+ *          "list_clients_per_partner",
+ *          parameters={"uuid"="expr(object.getUuid().toString())"},
+ *          absolute=true
+ *     ),
+ *     exclusion=@Hateoas\Exclusion(excludeIf="expr(not is_granted('ROLE_API_ADMIN'))")
+ * )
+ * @Hateoas\Relation(
+ *      "clients",
+ *      href=@Hateoas\Route(
+ *          "list_clients",
+ *          absolute=true
+ *     ),
+ *     exclusion=@Hateoas\Exclusion(excludeIf="expr(is_granted('ROLE_API_ADMIN'))")
+ * )
  *
  * @ORM\Entity(repositoryClass=PartnerRepository::class)
  * @ORM\Table(name="partners")
  */
-class Partner implements UserInterface
+class Partner implements UserInterface, JWTUserInterface
 {
+    /**
+     * Define an APi admin role (associated to a partner special account).
+     */
+    const API_ADMIN_ROLE = 'ROLE_API_ADMIN';
+
     /**
      * Define a partner default role.
      */
     const DEFAULT_PARTNER_ROLE = 'ROLE_API_CONSUMER';
 
     /**
-    * Define a set of partner status.
-    */
+     * Define a set of partner status.
+     */
     const PARTNER_TYPES = [
         'Magasin',
         'Spécialiste téléphonie',
@@ -46,6 +86,9 @@ class Partner implements UserInterface
      *
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
+     *
+     * @Serializer\Groups({"Partner_list", "Partner_detail"})
+     * @Serializer\Type("string")
      */
     private $uuid;
 
@@ -53,6 +96,8 @@ class Partner implements UserInterface
      * @var string
      *
      * @ORM\Column(type="string", length=45)
+     *
+     * @Serializer\Groups({"Partner_detail"})
      */
     private $type;
 
@@ -60,6 +105,8 @@ class Partner implements UserInterface
      * @var string
      *
      * @ORM\Column(type="string", length=45)
+     *
+     * @Serializer\Groups({"Partner_list", "Partner_detail"})
      */
     private $username;
 
@@ -67,6 +114,8 @@ class Partner implements UserInterface
      * @var string
      *
      * @ORM\Column(type="string", length=320, unique=true)
+     *
+     * @Serializer\Groups({"Partner_list", "Partner_detail"})
      */
     private $email;
 
@@ -74,6 +123,8 @@ class Partner implements UserInterface
      * @var string
      *
      * @ORM\Column(type="string", length=98, unique=true)
+     *
+     * @Serializer\Exclude
      */
     private $password;
 
@@ -86,6 +137,8 @@ class Partner implements UserInterface
      * @var array
      *
      * @ORM\Column(type="array")
+     *
+     * @Serializer\Groups({"Partner_detail"})
      */
     private $roles;
 
@@ -93,6 +146,8 @@ class Partner implements UserInterface
      * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable")
+     *
+     * @Serializer\Groups({"Partner_list", "Partner_detail"})
      */
     private $creationDate;
 
@@ -100,6 +155,8 @@ class Partner implements UserInterface
      * @var \DateTimeImmutable|null
      *
      * @ORM\Column(type="datetime_immutable", nullable=true)
+     *
+     * @Serializer\Groups({"Partner_detail"})
      */
     private $updateDate;
 
@@ -107,13 +164,17 @@ class Partner implements UserInterface
      * @var Collection|Offer[]
      *
      * @ORM\OneToMany(targetEntity=Offer::class, mappedBy="partner", cascade={"persist", "remove"}, orphanRemoval=true)
+     *
+     * @Serializer\Exclude
      */
     private $offers;
 
     /**
-     *  @var Collection|Client[]
+     * @var Collection|Client[]
      *
-     * @ORM\OneToMany(targetEntity=Client::class, mappedBy="partner", cascade={"persist", "remove"}, orphanRemoval=true)
+     * @ORM\OneToMany(targetEntity=Client::class, mappedBy="partner", cascade={"persist", "remove"}, orphanRemoval=true, fetch="EXTRA_LAZY")
+     *
+     * @Serializer\Exclude
      */
     private $clients;
 
@@ -123,8 +184,25 @@ class Partner implements UserInterface
     public function __construct()
     {
         $this->uuid = Uuid::uuid4();
+        $this->creationDate = new \DateTimeImmutable();
+        $this->updateDate = new \DateTimeImmutable();
         $this->offers = new ArrayCollection();
         $this->clients = new ArrayCollection();
+    }
+
+    /**
+     * Creates a new instance from a given JWT payload
+     * with Lexik JWTUserInterface implementation.
+     *
+     * {@inheritdoc}
+     *
+     * @see https://github.com/lexik/LexikJWTAuthenticationBundle/blob/master/Resources/doc/8-jwt-user-provider.md
+     */
+    public static function createFromPayload($username, array $payload): JWTUserInterface
+    {
+        return (new self()) // Uuid is provided by constructor!
+            ->setEmail($payload['email'])
+            ->setRoles($payload['roles']);
     }
 
     /**
@@ -196,7 +274,7 @@ class Partner implements UserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getPassword(): ?string
     {
@@ -236,12 +314,14 @@ class Partner implements UserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getRoles(): array
     {
         // Guarantee at least one role for every userS
-        $this->roles[] = Partner::DEFAULT_PARTNER_ROLE;
+        if (empty($this->roles)) {
+            $this->roles[] = Partner::DEFAULT_PARTNER_ROLE;
+        }
 
         return array_unique($this->roles);
     }
@@ -381,7 +461,7 @@ class Partner implements UserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getSalt(): ?string
     {
@@ -389,7 +469,7 @@ class Partner implements UserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function eraseCredentials(): void
     {

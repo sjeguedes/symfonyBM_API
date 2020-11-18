@@ -8,14 +8,34 @@ security:
             algorithm: auto
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
-        users_in_memory: { memory: null }
+        partner_api_account:
+            entity:
+                # the class of the entity that represents users
+                class: 'App\Entity\Partner'
+                # the property to query by - e.g. username, email, etc
+                property: 'email'
     firewalls:
+        login:
+            pattern: '^/%api_and_version_path_prefix%/login' # ^/api/v1/login
+            stateless: true
+            anonymous: true
+            json_login:
+                check_path: '/%api_and_version_path_prefix%/login/check' # ^/api/v1/login/check
+                username_path: api_account.email
+                password_path:  api_account.password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+        api:
+            pattern: '^/%api_and_version_path_prefix%' # ^/api/v1
+            stateless: true
+            guard:
+                authenticators:
+                    - lexik_jwt_authentication.jwt_token_authenticator
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
         main:
             anonymous: lazy
-            provider: users_in_memory
 
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#firewalls-authentication
@@ -26,5 +46,5 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: '^/%api_and_version_path_prefix%/login', roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: '^/%api_and_version_path_prefix%', roles: IS_AUTHENTICATED_FULLY }

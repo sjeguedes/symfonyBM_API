@@ -7,11 +7,15 @@ namespace App\Repository;
 use App\Entity\Partner;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * Class PartnerRepository
+ *
+ * Manage Partner database queries.
  */
-class PartnerRepository extends ServiceEntityRepository
+class PartnerRepository extends AbstractAPIRepository implements UserLoaderInterface
 {
     /**
      * PartnerRepository constructor.
@@ -24,7 +28,15 @@ class PartnerRepository extends ServiceEntityRepository
     }
 
     /**
-     * Find one partner by its username.
+     * {@inheritdoc}
+     */
+    public function findListByPartner(string $partnerUuid, ?array $paginationData): \IteratorAggregate
+    {
+        // Not necessary for this repository
+    }
+
+    /**
+     * Find one partner by his username.
      *
      * @param string $username
      *
@@ -34,10 +46,32 @@ class PartnerRepository extends ServiceEntityRepository
      */
     public function findOneByUserName(string $username): ?Partner
     {
-        return $this->createQueryBuilder('p')
-            ->where('p.name = :query OR p.email = :query')
+        return $this->createQueryBuilder('par')
+            ->where('par.name = :query OR par.email = :query')
             ->setParameter('query', $username)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /**
+     * Load the user for the given email (which is considered as a username.
+     *
+     * This method must return null if the user is not found.
+     *
+     * @param string $email the unique property to retrieve user in database
+     *
+     * @return UserInterface|null
+     *
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function loadUserByUsername($email): ?UserInterface
+    {
+        $result =  $this->createQueryBuilder('par')
+            ->where('par.email = :query')
+            ->orWhere('par.username = :query')
+            ->setParameter('query', $email)
+            ->getQuery()
+            ->getOneOrNullResult();
+        return $result;
     }
 }
