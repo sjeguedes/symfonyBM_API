@@ -13,7 +13,10 @@ use JMS\Serializer\Annotation as Serializer;
 use Lexik\Bundle\JWTAuthenticationBundle\Security\User\JWTUserInterface;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Mapping\ClassMetadata;
 
 /**
  * Class Partner
@@ -71,6 +74,14 @@ class Partner implements UserInterface, JWTUserInterface
      * Define a partner default role.
      */
     const DEFAULT_PARTNER_ROLE = 'ROLE_API_CONSUMER';
+
+    /**
+     * Define a set of partner roles.
+     */
+    const PARTNER_ROLES = [
+        self::API_ADMIN_ROLE,
+        self::DEFAULT_PARTNER_ROLE
+    ];
 
     /**
      * Define a set of partner status.
@@ -152,7 +163,7 @@ class Partner implements UserInterface, JWTUserInterface
     private $creationDate;
 
     /**
-     * @var \DateTimeImmutable|null
+     * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable", nullable=true)
      *
@@ -203,6 +214,43 @@ class Partner implements UserInterface, JWTUserInterface
         return (new self()) // Uuid is provided by constructor!
             ->setEmail($payload['email'])
             ->setRoles($payload['roles']);
+    }
+
+    /**
+     * Load validation constraints automatically when this entity is validated.
+     *
+     * @param ClassMetadata $metadata
+     *
+     * @return void
+     *
+     * @see Symfony\Component\Validator\Mapping\Loader\StaticMethodLoader
+     */
+    public static function loadValidatorMetadata(ClassMetadata $metadata): void
+    {
+        $metadata->addConstraint(
+            new UniqueEntity([
+                'fields' => 'email'
+        ]))
+        ->addPropertyConstraint('username',
+            new Assert\NotBlank()
+        )
+        ->addPropertyConstraint('email',
+            new Assert\Email())
+        ->addPropertyConstraints('plainPassword', [
+            new Assert\NotBlank(),
+            new Assert\Regex([
+                'pattern' => '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W]).{8,}$/'
+            ])
+        ])
+        ->addPropertyConstraint('type',
+            new Assert\Choice([
+                'choices' => self::PARTNER_TYPES
+        ]))
+        ->addPropertyConstraint('roles',
+            new Assert\Choice([
+                'multiple' => true,
+                'choices'  => self::PARTNER_ROLES
+        ]));
     }
 
     /**
@@ -276,7 +324,7 @@ class Partner implements UserInterface, JWTUserInterface
     /**
      * {@inheritdoc}
      */
-    public function getPassword(): ?string
+    public function getPassword(): string
     {
         return $this->password;
     }
@@ -302,11 +350,11 @@ class Partner implements UserInterface, JWTUserInterface
     }
 
     /**
-     * @param string $plainPassword
+     * @param string $plainPassword|null
      *
      * @return $this
      */
-    public function setPlainPassword(string $plainPassword): self
+    public function setPlainPassword(?string $plainPassword): self
     {
         $this->plainPassword = $plainPassword;
 
@@ -421,9 +469,9 @@ class Partner implements UserInterface, JWTUserInterface
     }
 
     /**
-     * @return \DateTimeImmutable|null
+     * @return \DateTimeImmutable
      */
-    public function getCreationDate(): ?\DateTimeImmutable
+    public function getCreationDate(): \DateTimeImmutable
     {
         return $this->creationDate;
     }
@@ -441,19 +489,19 @@ class Partner implements UserInterface, JWTUserInterface
     }
 
     /**
-     * @return \DateTimeImmutable|null
+     * @return \DateTimeImmutable
      */
-    public function getUpdateDate(): ?\DateTimeImmutable
+    public function getUpdateDate(): \DateTimeImmutable
     {
         return $this->updateDate;
     }
 
     /**
-     * @param \DateTimeImmutable|null $updateDate
+     * @param \DateTimeImmutable $updateDate
      *
      * @return $this
      */
-    public function setUpdateDate(?\DateTimeImmutable $updateDate): self
+    public function setUpdateDate(\DateTimeImmutable $updateDate): self
     {
         $this->updateDate = $updateDate;
 

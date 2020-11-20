@@ -12,6 +12,9 @@ use Hateoas\Configuration\Annotation as Hateoas;
 use JMS\Serializer\Annotation as Serializer;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Mapping\ClassMetadata;
 
 /**
  * Class Phone
@@ -104,7 +107,7 @@ class Phone
      *
      * @ORM\Column(type="text")
      *
-    @Serializer\Groups({"Phone_detail"})
+     * @Serializer\Groups({"Phone_detail"})
      */
     private $description;
 
@@ -137,7 +140,7 @@ class Phone
     private $creationDate;
 
     /**
-     * @var \DateTimeImmutable|null
+     * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable", nullable=true)
      *
@@ -154,6 +157,48 @@ class Phone
         $this->creationDate = new \DateTimeImmutable();
         $this->updateDate = new \DateTimeImmutable();
         $this->offers = new ArrayCollection();
+    }
+
+    /**
+     * Load validation constraints automatically when this entity is validated.
+     *
+     * @param ClassMetadata $metadata
+     *
+     * @return void
+     *
+     * @see Symfony\Component\Validator\Mapping\Loader\StaticMethodLoader
+     */
+    public static function loadValidatorMetadata(ClassMetadata $metadata): void
+    {
+        $metadata->addConstraint(
+            new UniqueEntity([
+                'fields' => ['brand', 'model']
+        ]))
+        ->addPropertyConstraint('brand',
+            new Assert\NotBlank()
+        )
+        ->addPropertyConstraint('model',
+            new Assert\NotBlank()
+        )
+        ->addPropertyConstraint('color',
+            new Assert\NotBlank()
+        )
+        ->addPropertyConstraint('description',
+            new Assert\NotBlank()
+        )
+        ->addPropertyConstraints('price', [
+            new Assert\Type([
+                'type' => 'integer'
+            ]),
+            new Assert\Range([
+                'min' => 100,
+                'max' => 1200,
+            ])
+        ])
+        ->addPropertyConstraint('type',
+            new Assert\Choice([
+                'choices' => self::PHONE_TYPES
+        ]));
     }
 
     /**
@@ -326,9 +371,9 @@ class Phone
     }
 
     /**
-     * @return \DateTimeImmutable|null
+     * @return \DateTimeImmutable
      */
-    public function getCreationDate(): ?\DateTimeImmutable
+    public function getCreationDate(): \DateTimeImmutable
     {
         return $this->creationDate;
     }
@@ -346,19 +391,19 @@ class Phone
     }
 
     /**
-     * @return \DateTimeImmutable|null
+     * @return \DateTimeImmutable
      */
-    public function getUpdateDate(): ?\DateTimeImmutable
+    public function getUpdateDate(): \DateTimeImmutable
     {
         return $this->updateDate;
     }
 
     /**
-     * @param \DateTimeImmutable|null $updateDate
+     * @param \DateTimeImmutable $updateDate
      *
      * @return $this
      */
-    public function setUpdateDate(?\DateTimeImmutable $updateDate): self
+    public function setUpdateDate(\DateTimeImmutable $updateDate): self
     {
         $this->updateDate = $updateDate;
 

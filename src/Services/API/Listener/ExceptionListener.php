@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace App\Services\API\Listener;
 
 use App\Services\API\Builder\ResponseBuilder;
+use App\Services\API\Validator\ValidationException;
+use JMS\Serializer\Exception\RuntimeException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 /**
  * Class ExceptionListener
@@ -17,6 +21,16 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  */
 class ExceptionListener
 {
+    /**
+     * Define managed error or exception class names.
+     */
+    const SELECTED_THROWABLE_CLASSES = [
+        \Error::class,
+        \Exception::class,
+        HttpException::class,
+        ValidationException::class
+    ];
+
     /**
      * @var LoggerInterface
      */
@@ -40,6 +54,102 @@ class ExceptionListener
     }
 
     /**
+     * Prepare custom error and HTTP exception response data.
+     *
+     * @param \Throwable $exception
+     *
+     * @return array
+     */
+    private function handleErrorAndHttpException(\Throwable $exception): array
+    {
+        // Define status code to 500 by default or get real status code for HTTP exception
+        $statusCode = $exception instanceof HttpException
+            ? $exception->getStatusCode() : Response::HTTP_INTERNAL_SERVER_ERROR;
+        // Adapt response message
+        switch ($statusCode) {
+            case Response::HTTP_BAD_REQUEST: // 400
+            case Response::HTTP_FORBIDDEN: // 403
+                $message = $exception->getMessage();
+                break;
+            case Response::HTTP_NOT_FOUND: // 404
+                $message = 'Requested URI not found: please check path and parameters type.';
+                break;
+            case Response::HTTP_INTERNAL_SERVER_ERROR: // 500
+                $message = 'Technical error: please contact us if necessary!';
+                // Allow JMS (de)serialization exception messages
+                if ($exception instanceof RuntimeException) {
+                    $statusCode = Response::HTTP_BAD_REQUEST;
+                    $message = $exception->getMessage();
+                }
+                break;
+            default:
+                $message = 'Unknown or unexpected error: please contact us if necessary!';
+        }
+        return [
+            'statusCode' => $statusCode,
+            'message'    => $message // simple string to JSON encode
+        ];
+    }
+
+    /**
+     * Prepare custom validation exception response data.
+     *
+     * @param \Throwable $exception
+     *
+     * @return array
+     */
+    private function handleValidationException(\Throwable $exception): array
+    {
+        $errors = $this->listValidationErrors($exception->getConstraintViolationList());
+        $serializer = $this->responseBuilder->getSerializationProvider()->getSerializer();
+        $statusCode = Response::HTTP_BAD_REQUEST;
+        // Format validation errors into response data message
+        $message = $serializer->serialize(
+            [
+                'code'    => $statusCode,
+                'message' => $exception->getMessage(),
+                'errors'  => $errors
+            ],
+            'json'
+        );
+        // Return response data
+        return [
+            'statusCode' => $statusCode,
+            'message'    => $message // data already JSON encoded
+        ];
+    }
+
+    /**
+     * Normalize validation constraint violations by listing them with an array of errors.
+     *
+     * Please note normalization is not a JMS serializer feature.
+     *
+     * @param ConstraintViolationListInterface $violationList
+     *
+     * @return array
+     */
+    private function listValidationErrors(ConstraintViolationListInterface $violationList): array
+    {
+        $errors = [];
+        /** @var ConstraintViolationList $violationList */
+        foreach ($violationList as $violation) {
+            $propertyPath = $violation->getPropertyPath();
+            // Prepare sub-property when property is another object with only 1 depth level
+            if (preg_match('/^([\w]+)\.([\w]+)(\.[\w]+)?$/', $propertyPath, $matches)) {
+                // CAUTION: this is probably a quite weak script part!
+                $snakeCasedProperty = $this->responseBuilder->makeSnakeCasedPropertyName($matches[1]);
+                $snakeCasedSubProperty = $this->responseBuilder->makeSnakeCasedPropertyName($matches[2]);
+                $errors[$snakeCasedProperty][$snakeCasedSubProperty] = $violation->getMessage();
+            // Prepare simple property
+            } else {
+                $camelCasedProperty = $this->responseBuilder->makeSnakeCasedPropertyName($propertyPath);
+                $errors[$camelCasedProperty] = $violation->getMessage();
+            }
+        }
+        return $errors;
+    }
+
+    /**
      * Call kernel exception handler to filter several HTTP exceptions
      * in order to return a JSON response instead.
      *
@@ -52,29 +162,23 @@ class ExceptionListener
     public function onKernelException(ExceptionEvent $event): void
     {
         $exception = $event->getThrowable();
-        // Filter Symfony HTTP exceptions or errors only
-        if (!$exception instanceof HttpException && !$exception instanceof \Error) {
+        // Get all classes associated to current exception
+        $classes = class_parents($exception);
+        array_unshift($classes, \get_class($exception));
+        // Filter Symfony HTTP exceptions, errors or custom validation exception only
+        if (empty(array_intersect($classes, self::SELECTED_THROWABLE_CLASSES))) {
            return;
         }
-        // Define status code to 500 in case of error or get real status code for HTTP exception
-        $statusCode = $exception instanceof \Error ? Response::HTTP_INTERNAL_SERVER_ERROR : $exception->getStatusCode();
-        // Adapt response message
-        switch ($statusCode) {
-            case Response::HTTP_BAD_REQUEST: // 400
-            case Response::HTTP_FORBIDDEN: // 403
-                $message = $exception->getMessage();
-                break;
-            case Response::HTTP_NOT_FOUND: // 404
-                $message = 'Request URI not found: please check route and parameters type.';
-                break;
-            case Response::HTTP_INTERNAL_SERVER_ERROR: // 500
-                $message = 'Technical error: please contact us if necessary!';
-                break;
-            default:
-                $message = 'Unknown or unexpected error: please contact us if necessary!';
+        // Precise if data are already JSON encoded
+        if ($exception instanceof ValidationException) {
+            $data = $this->handleValidationException($exception);
+            $isJsonData = true;
+        } else {
+            $data = $this->handleErrorAndHttpException($exception);
+            $isJsonData = false;
         }
         // Content-Type header is automatically changed to mention an API problem!
-        $response = $this->responseBuilder->createJson($message, $statusCode);
+        $response = $this->responseBuilder->createJson($data['message'], $data['statusCode'], [], $isJsonData);
         $event->setResponse($response);
         // Log exception to get more details.
         $this->log($exception);
@@ -101,6 +205,7 @@ class ExceptionListener
                 'line' => $exception->getLine(),
             ]
         ];
+        // Add previous exception if needed.
         if ($exception->getPrevious() !== null) {
             $log += [
                 'previous' => [

@@ -16,7 +16,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
@@ -173,19 +172,14 @@ class ClientController extends AbstractController
         Request $request,
         UrlGeneratorInterface $urlGenerator
     ): JsonResponse {
-        // TODO: check body JSON content before with exception listener to return an appropriate error response (Bad request)
-        $requestedContent = $request->getContent();
-        if (!$requestHandler->isValidJson($requestedContent)) {
-            // do stuff to return custom error response caught by kernel listener
-            throw new BadRequestHttpException('Invalid requested JSON');
-        }
-        // Create a new client resource
+        // Create a new client resource: invalid JSON is also filtered during (de)serialization.
         $client = $this->serializer->deserialize(
-            $requestedContent, // data as JSON string
+            $request->getContent(), // data as JSON string
             Client::class,
             'json'
         );
-        // TODO: validate Client entity (unique email and validity on fields) with validator to return an appropriate error response
+        // Validate Client entity (unique email and fields) with validator to return an appropriate error response
+        $requestHandler->validateEntity($client);
         // Associate authenticated partner to new client ans save data
         /** @var Partner $authenticatedPartner */
         $authenticatedPartner = $this->getUser();
@@ -202,7 +196,8 @@ class ClientController extends AbstractController
                     ['uuid' => $client->getUuid()->toString()],
                     UrlGeneratorInterface::ABSOLUTE_URL
                 )
-            ]
+            ],
+            false
         );
     }
 

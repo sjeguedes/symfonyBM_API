@@ -4,19 +4,40 @@ declare(strict_types=1);
 
 namespace App\Services\API\Handler;
 
+use App\Repository\AbstractAPIRepository;
+use App\Services\API\Validator\ValidationException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * Class FilterRequestHandler
  *
  * Centralize API common necessary instances and methods.
  */
-class FilterRequestHandler
+final class FilterRequestHandler
 {
     /**
      * Define a pagination per page limit.
      */
     const PER_PAGE_LIMIT = 10;
+
+    /**
+     * @var ValidatorInterface
+     */
+    private $validator;
+
+    /**
+     * FilterRequestHandler constructor.
+     *
+     * @param ValidatorInterface $validator
+     */
+    public function __construct(ValidatorInterface $validator)
+    {
+        $this->validator = $validator;
+    }
 
     /**
      * Filter pagination data.
@@ -80,5 +101,26 @@ class FilterRequestHandler
         // Compare "No error" code: JSON_ERROR_NONE error code is "0".
         json_decode($json);
         return 0 === json_last_error();
+    }
+
+    /**
+     * Validate an entity against constraints as defined property metadata.
+     *
+     * @param object $entity
+     *
+     * @return void
+     */
+    public function validateEntity(object $entity): void
+    {
+        $allowedEntitiesClasses = AbstractAPIRepository::DATABASE_ENTITIES_ALIASES;
+        if (!\array_key_exists(\get_class($entity), $allowedEntitiesClasses)) {
+            throw new \RuntimeException('Entity class name is unknown!');
+        }
+        /** @var ConstraintViolationList $violationList */
+        $violationList = $this->validator->validate($entity);
+        if (0 !== $violationList->count()) {
+            // Throw a custom validation exception to handle custom JSON error response
+            throw new ValidationException($violationList);
+        }
     }
 }

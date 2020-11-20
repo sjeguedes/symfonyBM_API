@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Hateoas\Representation;
 
-use App\Controller\AbstractAPIController;
 use App\Entity\Client;
 use App\Entity\Offer;
 use App\Entity\Partner;
@@ -18,10 +17,10 @@ use Symfony\Component\HttpFoundation\Request;
  *
  * Build API "HATEOAS" resource collection representation.
  */
-class RepresentationBuilder
+final class RepresentationBuilder
 {
     /**
-     * Define collection representation custom items labels
+     * Define collection representation custom items labels.
      */
     const ITEMS_LABELS = [
         Client::class  => 'clients',

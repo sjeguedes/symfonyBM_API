@@ -13,7 +13,7 @@ use JMS\Serializer\SerializerInterface;
  *
  * Provide JMS serialization capabilities.
  */
-class JMSSerializationProvider
+final class JMSSerializationProvider
 {
     /**
      * @var SerializerInterface

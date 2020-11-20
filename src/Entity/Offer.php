@@ -10,6 +10,8 @@ use Hateoas\Configuration\Annotation as Hateoas;
 use JMS\Serializer\Annotation as Serializer;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Mapping\ClassMetadata;
 
 /**
  * Class Offer
@@ -100,6 +102,25 @@ class Offer
     }
 
     /**
+     * Load validation constraints automatically when this entity is validated.
+     *
+     * @param ClassMetadata $metadata
+     *
+     * @return void
+     *
+     * @see Symfony\Component\Validator\Mapping\Loader\StaticMethodLoader
+     */
+    public static function loadValidatorMetadata(ClassMetadata $metadata): void
+    {
+        $metadata->addPropertyConstraint('partner',
+            new Assert\Valid()
+        )
+        ->addPropertyConstraint('phone',
+            new Assert\Valid()
+        );
+    }
+
+    /**
      * @return UuidInterface
      */
     public function getUuid(): UuidInterface
@@ -148,9 +169,9 @@ class Offer
     }
 
     /**
-     * @return \DateTimeImmutable|null
+     * @return \DateTimeImmutable
      */
-    public function getCreationDate(): ?\DateTimeImmutable
+    public function getCreationDate(): \DateTimeImmutable
     {
         return $this->creationDate;
     }

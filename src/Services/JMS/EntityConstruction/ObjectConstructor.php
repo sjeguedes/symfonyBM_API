@@ -16,7 +16,7 @@ use JMS\Serializer\Visitor\DeserializationVisitorInterface;
  *
  * @see https://stackoverflow.com/questions/31948118/jms-serializer-why-are-new-objects-not-being-instantiated-through-constructor
  */
-class ObjectConstructor implements ObjectConstructorInterface
+final class ObjectConstructor implements ObjectConstructorInterface
 {
     /**
      * Construct a new entity instance using its constructor when data are un-serialized.

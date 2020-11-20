@@ -10,6 +10,9 @@ use Hateoas\Configuration\Annotation as Hateoas;
 use JMS\Serializer\Annotation as Serializer;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Mapping\ClassMetadata;
 
 /**
  * Class Client
@@ -148,6 +151,36 @@ class Client
     }
 
     /**
+     * Load validation constraints automatically when this entity is validated.
+     *
+     * @param ClassMetadata $metadata
+     *
+     * @return void
+     *
+     * @see Symfony\Component\Validator\Mapping\Loader\StaticMethodLoader
+     */
+    public static function loadValidatorMetadata(ClassMetadata $metadata): void
+    {
+        $metadata->addConstraint(
+            new UniqueEntity([
+                'fields' => 'email'
+        ]))
+        ->addPropertyConstraint('name',
+            new Assert\NotBlank()
+        )
+        ->addPropertyConstraint('email',
+            new Assert\Email()
+        )
+        ->addPropertyConstraint('type',
+            new Assert\Choice([
+                'choices' => self::CLIENT_TYPES
+        ]))
+        ->addPropertyConstraint('partner',
+            new  Assert\Valid()
+        );
+    }
+
+    /**
      * @return UuidInterface
      */
     public function getUuid(): UuidInterface
@@ -216,19 +249,19 @@ class Client
     }
 
     /**
-     * @return Partner|null
+     * @return Partner
      */
-    public function getPartner(): ?Partner
+    public function getPartner(): Partner
     {
         return $this->partner;
     }
 
     /**
-     * @param Partner|null $partner
+     * @param Partner $partner
      *
      * @return $this
      */
-    public function setPartner(?Partner $partner): self
+    public function setPartner(Partner $partner): self
     {
         $this->partner = $partner;
 
@@ -236,9 +269,9 @@ class Client
     }
 
     /**
-     * @return \DateTimeImmutable|null
+     * @return \DateTimeImmutable
      */
-    public function getCreationDate(): ?\DateTimeImmutable
+    public function getCreationDate(): \DateTimeImmutable
     {
         return $this->creationDate;
     }
@@ -256,19 +289,19 @@ class Client
     }
 
     /**
-     * @return \DateTimeImmutable|null
+     * @return \DateTimeImmutable
      */
-    public function getUpdateDate(): ?\DateTimeImmutable
+    public function getUpdateDate(): \DateTimeImmutable
     {
         return $this->updateDate;
     }
 
     /**
-     * @param \DateTimeImmutable|null $updateDate
+     * @param \DateTimeImmutable $updateDate
      *
      * @return $this
      */
-    public function setUpdateDate(?\DateTimeImmutable $updateDate): self
+    public function setUpdateDate(\DateTimeImmutable $updateDate): self
     {
         $this->updateDate = $updateDate;
 

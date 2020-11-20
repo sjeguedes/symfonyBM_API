@@ -13,7 +13,7 @@ use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
  *
  * https://github.com/lexik/LexikJWTAuthenticationBundle/blob/master/Resources/doc/2-data-customization.md
  */
-class JWTCreatedListener
+final class JWTCreatedListener
 {
     /**
      * Add custom data to JWT payload.
