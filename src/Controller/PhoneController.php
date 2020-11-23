@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Entity\Partner;
 use App\Entity\Phone;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
-use Ramsey\Uuid\UuidInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -74,26 +72,16 @@ class PhoneController extends AbstractController
         RepresentationBuilder $representationBuilder,
         Request $request
     ): JsonResponse {
-        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
-        $phoneRepository = $this->getDoctrine()->getRepository(Phone::class);
-        // TODO: refactor this conditional part in RequestHandler method filterList(...)
-        // Get catalog complete list with filter or when request is made by an admin, with possible paginated results
-        // An admin has access to all existing clients with this role!
-        if ($requestHandler->isFullListRequested($request) || $this->isGranted(Partner::API_ADMIN_ROLE)) {
-            $phones = $phoneRepository->findList(
-                $phoneRepository->getQueryBuilder(),
-                $paginationData
-            );
-        // Find a set of Phone entities when request is made by a particular partner, with possible paginated results
-        } else {
-            // Get partner uuid from authenticated user
-            /** @var UuidInterface $partnerUuid */
-            $partnerUuid = $this->getUser()->getUuid();
-            $phones = $phoneRepository->findListByPartner(
-                $partnerUuid->toString(),
-                $paginationData
-            );
-        }
+        $paginationData = $requestHandler->filterPaginationData($request);
+        $isFullListRequested = $requestHandler->isFullListRequested($request);
+        // Get Phone collection depending on authenticated partner
+        // Get catalog complete list with filter or partner phone list, with possible paginated results
+        $phones = $requestHandler->filterList(
+            $this->getUser()->getUuid(),
+            $this->getDoctrine()->getRepository(Phone::class),
+            $paginationData,
+            $isFullListRequested // catalog filter
+        );
         // Get a paginated Phone collection representation
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
@@ -129,7 +117,7 @@ class PhoneController extends AbstractController
     public function showPhone(Phone $phone): JsonResponse
     {
         // Get serialized phone details (from catalog at this time)
-        // Filter result with serialization annotation
+        // Filter results with serialization rules (look at Phone entity)
         $data = $this->serializer->serialize(
             $phone,
             'json',

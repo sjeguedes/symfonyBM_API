@@ -8,9 +8,9 @@ use App\Entity\Client;
 use App\Entity\Offer;
 use App\Entity\Partner;
 use App\Entity\Phone;
-use App\Services\API\Handler\FilterRequestHandler;
 use Hateoas\Representation\PaginatedRepresentation;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
  * Class CollectionRepresentationBuilder
@@ -48,8 +48,18 @@ final class RepresentationBuilder
         // Define pagination parameters
         $totalCount = $collectionResults->count();
         $pageNumber = $paginationData['page'] ?? 1;
-        $perPageLimit = $paginationData['per_page'] ?? FilterRequestHandler::PER_PAGE_LIMIT;
+        $perPageLimit = $paginationData['per_page'] ?? 1;
+        $message = 'Pagination %1$s (%2$s) parameter failure: expected value >= 1';
+        if ($perPageLimit < 1 || $perPageLimit > $totalCount) {
+            $message .= $totalCount > 1 ? sprintf(' or value <= %1$d', $totalCount) : '';
+            throw new BadRequestHttpException(sprintf($message, 'limit', 'per_page'));
+        }
+        // Get total page count
         $pageTotalCount = (int) ceil($totalCount / $perPageLimit);
+        if ($pageNumber < 1 || $pageNumber > $pageTotalCount) {
+            $message .= $pageTotalCount > 1 ? sprintf(' or value <= %1$d', $pageTotalCount) : '';
+            throw new BadRequestHttpException(sprintf($message, 'number', 'page'));
+        }
         $itemsLabel = self::ITEMS_LABELS[$collectionClassName];
         // Get collection representation
         $collectionRepresentation = new CollectionResourceRepresentation($collectionResults, $itemsLabel);

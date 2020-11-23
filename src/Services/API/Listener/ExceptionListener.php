@@ -72,7 +72,7 @@ class ExceptionListener
                 $message = $exception->getMessage();
                 break;
             case Response::HTTP_NOT_FOUND: // 404
-                $message = 'Requested URI not found: please check path and parameters type.';
+                $message = 'Requested URI not found: please check path and parameters type or value.';
                 break;
             case Response::HTTP_INTERNAL_SERVER_ERROR: // 500
                 $message = 'Technical error: please contact us if necessary!';
@@ -101,16 +101,14 @@ class ExceptionListener
     private function handleValidationException(\Throwable $exception): array
     {
         $errors = $this->listValidationErrors($exception->getConstraintViolationList());
-        $serializer = $this->responseBuilder->getSerializationProvider()->getSerializer();
         $statusCode = Response::HTTP_BAD_REQUEST;
-        // Format validation errors into response data message
-        $message = $serializer->serialize(
+        // Format validation errors into response data JSON message
+        $message = json_encode(
             [
                 'code'    => $statusCode,
                 'message' => $exception->getMessage(),
                 'errors'  => $errors
-            ],
-            'json'
+            ]
         );
         // Return response data
         return [
@@ -122,7 +120,7 @@ class ExceptionListener
     /**
      * Normalize validation constraint violations by listing them with an array of errors.
      *
-     * Please note normalization is not a JMS serializer feature.
+     * Please note normalizer is not a JMS serializer feature. It uses handler instead.
      *
      * @param ConstraintViolationListInterface $violationList
      *
@@ -135,7 +133,7 @@ class ExceptionListener
         foreach ($violationList as $violation) {
             $propertyPath = $violation->getPropertyPath();
             // Prepare sub-property when property is another object with only 1 depth level
-            if (preg_match('/^([\w]+)\.([\w]+)(\.[\w]+)?$/', $propertyPath, $matches)) {
+            if (preg_match('/^(\w+)\.(\w+)$/', $propertyPath, $matches)) {
                 // CAUTION: this is probably a quite weak script part!
                 $snakeCasedProperty = $this->responseBuilder->makeSnakeCasedPropertyName($matches[1]);
                 $snakeCasedSubProperty = $this->responseBuilder->makeSnakeCasedPropertyName($matches[2]);
@@ -169,7 +167,7 @@ class ExceptionListener
         if (empty(array_intersect($classes, self::SELECTED_THROWABLE_CLASSES))) {
            return;
         }
-        // Precise if data are already JSON encoded
+        // Check validation exception and others and precise if data are already JSON encoded
         if ($exception instanceof ValidationException) {
             $data = $this->handleValidationException($exception);
             $isJsonData = true;
@@ -187,7 +185,7 @@ class ExceptionListener
     /**
      * Log exception in parallel.
      *
-     * @param \Throwable $exception an exception with Symfony HttpException or \Error type
+     * @param \Throwable $exception any type of thrown exception
      *
      * @return void
      */
@@ -206,7 +204,7 @@ class ExceptionListener
             ]
         ];
         // Add previous exception if needed.
-        if ($exception->getPrevious() !== null) {
+        if (null !== $exception->getPrevious()) {
             $log += [
                 'previous' => [
                     'message'   => $exception->getPrevious()->getMessage(),

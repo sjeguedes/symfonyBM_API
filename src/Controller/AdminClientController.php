@@ -84,8 +84,7 @@ class AdminClientController extends AbstractController
         RepresentationBuilder $representationBuilder,
         Request $request
     ): JsonResponse {
-        // TODO: check null result or wrong filters values to throw a custom exception and return an appropriate error response?
-        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
+        $paginationData = $requestHandler->filterPaginationData($request);
         $clientRepository = $this->getDoctrine()->getRepository(Client::class);
         // Find a set of Client entities with possible paginated results
         $clients = $clientRepository->findListByPartner(

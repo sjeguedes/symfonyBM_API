@@ -6,10 +6,10 @@ namespace App\Services\API\Handler;
 
 use App\Repository\AbstractAPIRepository;
 use App\Services\API\Validator\ValidationException;
+use Doctrine\Persistence\ObjectRepository;
+use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Validator\ConstraintViolationList;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
@@ -19,6 +19,16 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  */
 final class FilterRequestHandler
 {
+    /**
+    * Define managed query parameters as filters.
+    */
+    const AVAILABLE_FILTERS = [
+        'page',
+        'per_page',
+        'full_list',
+        'catalog'
+    ];
+
     /**
      * Define a pagination per page limit.
      */
@@ -43,24 +53,58 @@ final class FilterRequestHandler
      * Filter pagination data.
      *
      * @param Request $request
-     * @param int|null $perPageLimit
+     * @param int     $perPageLimit
      *
      * @return array|null
      *
      * @throws \Exception
      */
-    public function filterPaginationData(Request $request, int $perPageLimit = null): ?array
+    public function filterPaginationData(Request $request, int $perPageLimit = self::PER_PAGE_LIMIT): ?array
     {
-        if (!$this->isPaginated($request)) {
+        if (!$this->isPaginationDefined($request)) {
             return null;
         }
-        $page = (int)$request->query->get('page');
-        $per_page = (int)$request->query->get('per_page') ?? $perPageLimit;
-        // Check if a pagination limit is correctly defined.
-        if (null === $per_page && null === $perPageLimit) {
-            throw new \RuntimeException('A pagination limit must be defined!');
-        }
+        // Values validity will be checked in Hateoas RepresentationBuilder class!
+        $page = (int) $request->query->get('page');
+        // Avoid issue with parentheses when parameter is null!
+        $per_page = (int) ($request->query->get('per_page') ?? $perPageLimit);
         return ['page' => $page, 'per_page' => $per_page];
+    }
+
+    /**
+     * Filter an entity collection based on request pagination data and particular entity
+     * depending on authenticated partner uuid.
+     *
+     * @param UuidInterface    $partnerUuid
+     * @param ObjectRepository $repository
+     * @param array            $paginationData
+     * @param bool             $isFullListAllowed
+     *
+     * @return \IteratorAggregate
+     *
+     * @throws \Exception
+     */
+    public function filterList(
+        UuidInterface $partnerUuid,
+        ObjectRepository $repository,
+        ?array $paginationData,
+        bool $isFullListAllowed = false
+    ): \IteratorAggregate {
+        // Get complete list when request is made by an admin, with possible paginated results
+        // An admin has access to all existing clients with this role!
+        if ($isFullListAllowed) {
+            $collection = $repository->findList(
+                $repository->getQueryBuilder(),
+                $paginationData
+            );
+        // Find a set of entities when request is made by a particular partner, with possible paginated results
+        } else {
+            $collection = $repository->findListByPartner(
+                $partnerUuid->toString(),
+                $paginationData
+            );
+        }
+        return $collection;
     }
 
     /**
@@ -84,23 +128,9 @@ final class FilterRequestHandler
      *
      * @return bool
      */
-    private function isPaginated(Request $request): bool
+    private function isPaginationDefined(Request $request): bool
     {
         return null !== $request->query->get('page');
-    }
-
-    /**
-     * Check a valid JSON string.
-     *
-     * @param string $json
-     *
-     * @return bool
-     */
-    public function isValidJson(string $json): bool
-    {
-        // Compare "No error" code: JSON_ERROR_NONE error code is "0".
-        json_decode($json);
-        return 0 === json_last_error();
     }
 
     /**
