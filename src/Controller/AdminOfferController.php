@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Entity\Client;
 use App\Entity\Offer;
 use App\Entity\Partner;
 use App\Entity\Phone;
@@ -78,10 +77,8 @@ class AdminOfferController extends AbstractController
         RepresentationBuilder $representationBuilder,
         Request $request
     ): JsonResponse {
-        // TODO: check null result or wrong filters values to throw a custom exception and return an appropriate error response?
-        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
+        $paginationData = $requestHandler->filterPaginationData($request);
         $offerRepository = $this->getDoctrine()->getRepository(Offer::class);
-        // TODO: maybe add a offer Role filter feature?
         // Get complete list with possible paginated results
         $offers = $offerRepository->findList(
             $offerRepository->getQueryBuilder(),
@@ -129,8 +126,7 @@ class AdminOfferController extends AbstractController
         RepresentationBuilder $representationBuilder,
         Request $request
     ): JsonResponse {
-        // TODO: check null result or wrong filters values to throw a custom exception and return an appropriate error response?
-        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
+        $paginationData = $requestHandler->filterPaginationData($request);
         $offerRepository = $this->getDoctrine()->getRepository(Offer::class);
         // Find a set of Offer entities with possible paginated results
         $offers = $offerRepository->findListByPartner(
@@ -179,8 +175,7 @@ class AdminOfferController extends AbstractController
         RepresentationBuilder $representationBuilder,
         Request $request
     ): JsonResponse {
-        // TODO: check null result or wrong filters values to throw a custom exception and return an appropriate error response?
-        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
+        $paginationData = $requestHandler->filterPaginationData($request);
         $offerRepository = $this->getDoctrine()->getRepository(Offer::class);
         // Find a set of Offer entities with possible paginated results
         $offers = $offerRepository->findListByPhone(
@@ -222,7 +217,7 @@ class AdminOfferController extends AbstractController
      */
     public function showOffer(Offer $offer): JsonResponse
     {
-        // Filter result with serialization annotation
+        // Filter result with serialization rules (look at Offer entity)
         $data = $this->serializer->serialize(
             $offer,
             'json',

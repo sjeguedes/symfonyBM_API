@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataFixtures;
 
-use App\Services\Faker\DataProvider;
+use App\Services\Faker\Provider\DataProvider;
 use App\Entity\Phone;
 use Doctrine\Persistence\ObjectManager;
 
@@ -57,7 +57,7 @@ class PhoneFixtures extends BaseFixture
                     ->setPrice($phonePrice);
             }, $index);
             // Manage multiple series
-            $index ++;
+            $index++;
         }
         $manager->flush();
     }

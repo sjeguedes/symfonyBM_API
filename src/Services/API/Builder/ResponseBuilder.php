@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Manage API response.
  */
-class ResponseBuilder
+final class ResponseBuilder
 {
     /**
      * @var JMSSerializationProvider
@@ -55,6 +55,7 @@ class ResponseBuilder
      * @param string|null $data       a JSON response string or custom message
      * @param int         $statusCode a response status code
      * @param array       $headers    an array of response headers
+     * @param bool        $isAlreadyJson
      *
      * @return JsonResponse
      *
@@ -63,16 +64,20 @@ class ResponseBuilder
     public function createJson(
         ?string $data,
         int $statusCode = 200,
-        array $headers = []
+        array $headers = [],
+        bool $isAlreadyJson = true
     ): JsonResponse {
-        // Define HAL format added to JSON response
+        // Define HAL format added to JSON response by default
         $headers['Content-Type'] = 'application/hal+json';
         // Get response custom configured data
         if (!\is_null($data) && Response::HTTP_OK !== $statusCode) {
-            $data = $this->setCustomJsonData($statusCode, $data);
-            $headers['Content-Type'] = 'application/json';
+            // Get exception or error correct Content-Type header
+            $headers['Content-Type'] = $statusCode >= Response::HTTP_BAD_REQUEST
+                ? 'application/problem+json' : 'application/json';
+            // Pass directly JSON data or encode data to JSON if needed
+            $data = !$isAlreadyJson ? $this->setCustomJsonData($statusCode, $data) : $data;
         }
-        //return JsonResponse::fromJsonString($data, $statusCode, $headers);
+        // Return standard JSON response for all cases
         return new JsonResponse($data, $statusCode, $headers, true);
     }
 
@@ -84,6 +89,24 @@ class ResponseBuilder
     public function getSerializationProvider(): JMSSerializationProvider
     {
         return $this->serializationProvider;
+    }
+
+    /**
+     * Make snake cased string format based on property path.
+     *
+     * This is useful for validation errors for instance.
+     *
+     * @param string $propertyName
+     *
+     * @return string
+     */
+    public function makeSnakeCasedPropertyName(string $propertyName): string
+    {
+        $snakeCasedProperty = strtolower(
+            preg_replace('/(?<=\w)([A-Z])/', '_$1', $propertyName)
+        );
+        // Return possibly changed string to format to snake case format
+        return $snakeCasedProperty;
     }
 
     /**

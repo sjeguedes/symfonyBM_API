@@ -17,7 +17,7 @@ use JMS\Serializer\Metadata\StaticPropertyMetadata;
  *
  * Manage hateoas collection representation serialization.
  */
-class CollectionRepresentationSubscriber implements EventSubscriberInterface
+final class CollectionRepresentationSubscriber implements EventSubscriberInterface
 {
     /**
      * @var CollectionResourceRepresentation|null

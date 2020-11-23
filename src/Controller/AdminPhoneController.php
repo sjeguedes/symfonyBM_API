@@ -78,8 +78,7 @@ class AdminPhoneController extends AbstractController
         RepresentationBuilder $representationBuilder,
         Request $request
     ): JsonResponse {
-        // TODO: check null result or wrong filters values to throw a custom exception and return an appropriate error response?
-        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
+        $paginationData = $requestHandler->filterPaginationData($request);
         $phoneRepository = $this->getDoctrine()->getRepository(Phone::class);
         // Find a set of Phone entities with possible paginated results
         $phones = $phoneRepository->findListByPartner(

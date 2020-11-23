@@ -8,18 +8,16 @@ use App\Entity\Client;
 use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
+use App\Services\API\Security\ClientVoter;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
-use Ramsey\Uuid\UuidInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
  * Class ClientController
@@ -76,25 +74,16 @@ class ClientController extends AbstractController
         RepresentationBuilder $representationBuilder,
         Request $request
     ): JsonResponse {
-        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
-        $clientRepository = $this->getDoctrine()->getRepository(Client::class);
-        // TODO: refactor this conditional part in RequestHandler method filterList(...)
-        // Get complete list when request is made by an admin, with possible paginated results
-        // An admin has access to all existing clients with this role!
-        if ($this->isGranted(Partner::API_ADMIN_ROLE)) {
-            $clients = $clientRepository->findList(
-                $clientRepository->getQueryBuilder(),
-                $paginationData
-            );
-        // Find a set of Client entities when request is made by a particular partner, with possible paginated results
-        } else {
-            /** @var UuidInterface $partnerUuid */
-            $partnerUuid = $this->getUser()->getUuid();
-            $clients = $clientRepository->findListByPartner(
-                $partnerUuid->toString(),
-                $paginationData
-            );
-        }
+        $paginationData = $requestHandler->filterPaginationData($request);
+        $isFullListRequested = $requestHandler->isFullListRequested($request);
+        $isAdminRole = $this->isGranted(Partner::API_ADMIN_ROLE);
+        // Get Client collection depending on authenticated partner
+        $clients = $requestHandler->filterList(
+            $this->getUser()->getUuid(),
+            $this->getDoctrine()->getRepository(Client::class),
+            $paginationData,
+            $isAdminRole && $isFullListRequested
+        );
         // Get a paginated Client collection representation
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
@@ -102,7 +91,7 @@ class ClientController extends AbstractController
             Client::class,
             $paginationData
         );
-        // Filter results with serialization group
+        // Filter results with serialization rules (look at Client entity)
         $data = $this->serializer->serialize(
             $paginatedCollection,
             'json',
@@ -130,20 +119,13 @@ class ClientController extends AbstractController
     public function showClient(Client $client): JsonResponse
     {
         // Find partner client details
-        // An admin has access to all existing clients details with this role!
-        if (!$this->isGranted(Partner::API_ADMIN_ROLE)) {
-            // TODO: check false result to throw a custom exception and return an appropriate error response
-            // TODO: Make a Voter service instead
-            // Get authenticated partner to match client to show
-            /** @var Partner $authenticatedPartner */
-            $authenticatedPartner = $this->getUser();
-            // Check partner and client relation with extra lazy fetch
-            if (!$authenticatedPartner->getClients()->contains($client)) {
-                // do stuff to return custom error response caught by kernel listener
-                throw new AccessDeniedException('Show action on client resource not allowed');
-            }
-        }
-        // Filter result with serialization annotation
+        // An admin has access to all existing clients details with this permission!
+        $this->denyAccessUnlessGranted(
+            ClientVoter::CAN_VIEW,
+            $client,
+            'Client resource view action not allowed'
+        );
+        // Filter result with serialization rules (look at Client entity)
         $data = $this->serializer->serialize(
             $client,
             'json',
@@ -173,19 +155,14 @@ class ClientController extends AbstractController
         Request $request,
         UrlGeneratorInterface $urlGenerator
     ): JsonResponse {
-        // TODO: check body JSON content before with exception listener to return an appropriate error response (Bad request)
-        $requestedContent = $request->getContent();
-        if (!$requestHandler->isValidJson($requestedContent)) {
-            // do stuff to return custom error response caught by kernel listener
-            throw new BadRequestHttpException('Invalid requested JSON');
-        }
-        // Create a new client resource
+        // Create a new client resource: invalid JSON is also filtered during (de)serialization.
         $client = $this->serializer->deserialize(
-            $requestedContent, // data as JSON string
+            $request->getContent(), // data as JSON string
             Client::class,
             'json'
         );
-        // TODO: validate Client entity (unique email and validity on fields) with validator to return an appropriate error response
+        // Validate Client entity (unique email and fields) with validator to return an appropriate error response
+        $requestHandler->validateEntity($client);
         // Associate authenticated partner to new client ans save data
         /** @var Partner $authenticatedPartner */
         $authenticatedPartner = $this->getUser();
@@ -202,7 +179,8 @@ class ClientController extends AbstractController
                     ['uuid' => $client->getUuid()->toString()],
                     UrlGeneratorInterface::ABSOLUTE_URL
                 )
-            ]
+            ],
+            false
         );
     }
 
@@ -224,21 +202,19 @@ class ClientController extends AbstractController
      */
     public function deleteClient(Client $client): Response
     {
+        // An admin has access to all existing clients details with this permission!
+        $this->denyAccessUnlessGranted(
+            ClientVoter::CAN_DELETE,
+            $client,
+            'Client resource deletion action not allowed'
+        );
         // An admin has access to all existing clients details with this role!
         $partner = $client->getPartner();
-        // A simple partner can only delete his clients only
+        // A simple partner can only delete his clients!
         if (!$this->isGranted(Partner::API_ADMIN_ROLE)) {
-            // TODO: check false result to throw a custom exception and return an appropriate error response
-            // TODO: Make a Voter service instead
             // Get authenticated partner to match client to remove and save deletion
-            /** @var Partner $authenticatedPartner */
-            $authenticatedPartner = $this->getUser();
-            // Check partner and client relation with extra lazy fetch
-            if (!$authenticatedPartner->getClients()->contains($client)) {
-                // do stuff to return custom error response caught by kernel listener
-                throw new AccessDeniedException('Deletion action on client resource not allowed');
-            }
-            $partner = $authenticatedPartner;
+            /** @var Partner $partner */
+            $partner = $this->getUser();
         }
         $partner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
         $this->getDoctrine()->getManager()->flush();

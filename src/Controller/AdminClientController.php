@@ -17,7 +17,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -85,8 +84,7 @@ class AdminClientController extends AbstractController
         RepresentationBuilder $representationBuilder,
         Request $request
     ): JsonResponse {
-        // TODO: check null result or wrong filters values to throw a custom exception and return an appropriate error response?
-        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
+        $paginationData = $requestHandler->filterPaginationData($request);
         $clientRepository = $this->getDoctrine()->getRepository(Client::class);
         // Find a set of Client entities with possible paginated results
         $clients = $clientRepository->findListByPartner(
@@ -134,19 +132,14 @@ class AdminClientController extends AbstractController
         Request $request,
         UrlGeneratorInterface $urlGenerator
     ): JsonResponse {
-        // TODO: check body JSON content before with exception listener to return an appropriate error response (Bad request)
-        $requestedContent = $request->getContent();
-        if (!$requestHandler->isValidJson($requestedContent)) {
-            // do stuff to return custom error response caught by kernel listener
-            throw new BadRequestHttpException('Invalid requested JSON');
-        }
-        // Create a new client resource
+        // Create a new client resource: invalid JSON is also filtered during (de)serialization.
         $client = $this->serializer->deserialize(
-            $requestedContent, // data as JSON string
+            $request->getContent(), // data as JSON string
             Client::class,
             'json'
         );
-        // TODO: validate Client entity (unique email and validity on fields) with validator to return an appropriate error response
+        // Validate Client entity (unique email and fields) with validator to return an appropriate error response
+        $requestHandler->validateEntity($client);
         // Associate requested partner to new client ans save data
         $partner->setUpdateDate(new \DateTimeImmutable())->addClient($client);
         $this->getDoctrine()->getManager()->flush();
@@ -161,7 +154,8 @@ class AdminClientController extends AbstractController
                     ['uuid' => $client->getUuid()->toString()],
                     UrlGeneratorInterface::ABSOLUTE_URL
                 )
-            ]
+            ],
+            false
         );
     }
 }

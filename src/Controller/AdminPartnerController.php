@@ -74,10 +74,8 @@ class AdminPartnerController extends AbstractController
         RepresentationBuilder $representationBuilder,
         Request $request
     ): JsonResponse {
-        // TODO: check null result or wrong filters values to throw a custom exception and return an appropriate error response?
-        $paginationData = $requestHandler->filterPaginationData($request, FilterRequestHandler::PER_PAGE_LIMIT);
+        $paginationData = $requestHandler->filterPaginationData($request);
         $partnerRepository = $this->getDoctrine()->getRepository(Partner::class);
-        // TODO: maybe add a partner Role query parameter filter feature?
         // Get complete list with possible paginated results
         $partners = $partnerRepository->findList(
             $partnerRepository->getQueryBuilder(),

@@ -13,7 +13,7 @@ use JMS\Serializer\Annotation as Serializer;
  *
  * Adapt hateoas collection representation to API needs.
  */
-class CollectionResourceRepresentation extends CollectionRepresentation
+final class CollectionResourceRepresentation extends CollectionRepresentation
 {
     /**
      * @var bool

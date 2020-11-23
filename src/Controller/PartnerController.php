@@ -6,13 +6,13 @@ namespace App\Controller;
 
 use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
+use App\Services\API\Security\PartnerVoter;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
  * Class PartnerController
@@ -71,19 +71,14 @@ class PartnerController extends AbstractController
      */
     public function showPartner(Partner $partner): JsonResponse
     {
-        // TODO: check false result to throw a custom exception and return an appropriate error response
-        // TODO: Make a Voter service instead
-        if (!$this->isGranted(Partner::API_ADMIN_ROLE)) {
-            $requestedPartnerUuid = $partner->getUuid()->toString();
-            /** @var Partner $authenticatedPartner */
-            $authenticatedPartner = $this->getUser();
-            $authenticatedPartnerUuid = $authenticatedPartner->getUuid()->toString();
-            if ($requestedPartnerUuid !== $authenticatedPartnerUuid) {
-                // do stuff to return custom error response caught by kernel listener
-                throw new AccessDeniedException('Show action on partner resource not allowed');
-            }
-        }
-        // Filter result with serialization annotation
+        // Find partner details
+        // An admin has access to all existing partners (including himself) details with this permission!
+        $this->denyAccessUnlessGranted(
+            PartnerVoter::CAN_VIEW,
+            $partner,
+            'Partner resource view action not allowed'
+        );
+        // Filter result with serialization rules (look at Partner entity)
         $data = $this->serializer->serialize(
             $partner,
             'json',

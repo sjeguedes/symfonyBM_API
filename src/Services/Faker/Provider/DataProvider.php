@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Faker;
+namespace App\Services\Faker\Provider;
 
 use App\Entity\Phone;
 use Faker\Generator;
