@@ -7,7 +7,7 @@ namespace App\Services\API\Security;
 use App\Entity\Client;
 use App\Entity\Partner;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Authorization\AuthorizationChecker;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -33,16 +33,16 @@ class ClientVoter extends Voter
     ];
 
     /**
-     * @var AuthorizationChecker
+     * @var AuthorizationCheckerInterface
      */
     private $securityChecker;
 
     /**
      * ClientVoter constructor.
      *
-     * @param AuthorizationChecker $securityChecker
+     * @param AuthorizationCheckerInterface $securityChecker
      */
-    public function __construct(AuthorizationChecker $securityChecker)
+    public function __construct(AuthorizationCheckerInterface $securityChecker)
     {
         $this->securityChecker = $securityChecker;
     }
