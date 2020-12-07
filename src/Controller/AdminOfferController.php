@@ -12,6 +12,8 @@ use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Ramsey\Uuid\UuidInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -81,6 +83,7 @@ class AdminOfferController extends AbstractController
         $offerRepository = $this->getDoctrine()->getRepository(Offer::class);
         // Get complete list with possible paginated results
         $offers = $offerRepository->findList(
+            $this->getUser()->getUuid(),
             $offerRepository->getQueryBuilder(),
             $paginationData
         );
@@ -88,8 +91,7 @@ class AdminOfferController extends AbstractController
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
             $offers,
-            Offer::class,
-            $paginationData
+            Offer::class
         );
         // Filter results with serialization rules (look at Offer entity)
         $data = $this->serializer->serialize(
@@ -112,11 +114,13 @@ class AdminOfferController extends AbstractController
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
      *
+     * @ParamConverter("partner", converter="DoctrineCacheConverter")
+     *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}/offers"
-     * }, name="list_offers_per_partner", methods={"GET"})
+     * }, defaults={"entityType"=Partner::class}, name="list_offers_per_partner", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -137,8 +141,7 @@ class AdminOfferController extends AbstractController
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
             $offers,
-            Offer::class,
-            $paginationData
+            Offer::class
         );
         // Filter results with serialization rules (look at Offer entity)
         $data = $this->serializer->serialize(
@@ -161,11 +164,13 @@ class AdminOfferController extends AbstractController
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
      *
+     * @ParamConverter("phone", converter="DoctrineCacheConverter")
+     *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/phones/{uuid<[\w-]{36}>}/offers"
-     * }, name="list_offers_per_phone", methods={"GET"})
+     * }, defaults={"entityType"=Phone::class}, name="list_offers_per_phone", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -177,8 +182,11 @@ class AdminOfferController extends AbstractController
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $offerRepository = $this->getDoctrine()->getRepository(Offer::class);
+        /** @var UuidInterface $adminUserUuid */
+        $adminUserUuid = $this->getUser()->getUuid();
         // Find a set of Offer entities with possible paginated results
         $offers = $offerRepository->findListByPhone(
+            $adminUserUuid->toString(),
             $phone->getUuid()->toString(),
             $paginationData
         );
@@ -186,8 +194,7 @@ class AdminOfferController extends AbstractController
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
             $offers,
-            Offer::class,
-            $paginationData
+            Offer::class
         );
         // Filter results with serialization rules (look at Offer entity)
         $data = $this->serializer->serialize(
@@ -207,11 +214,13 @@ class AdminOfferController extends AbstractController
      *
      * @param Offer $offer
      *
+     * @ParamConverter("offer", converter="DoctrineCacheConverter")
+     *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/offers/{uuid<[\w-]{36}>}"
-     * }, name="show_offer", methods={"GET"})
+     * }, defaults={"entityType"=Offer::class}, name="show_offer", methods={"GET"})
      *
      * @throws \Exception
      */

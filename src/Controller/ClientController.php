@@ -12,6 +12,7 @@ use App\Services\API\Security\ClientVoter;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -88,8 +89,7 @@ class ClientController extends AbstractController
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
             $clients,
-            Client::class,
-            $paginationData
+            Client::class
         );
         // Filter results with serialization rules (look at Client entity)
         $data = $this->serializer->serialize(
@@ -106,13 +106,15 @@ class ClientController extends AbstractController
      *
      * Please note that Symfony param converter is used here to retrieve a Client entity.
      *
-     * @param Client  $client
+     * @param Client $client
+     *
+     * @ParamConverter("client", converter="DoctrineCacheConverter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/clients/{uuid<[\w-]{36}>}"
-     * }, name="show_client", methods={"GET"})
+     * }, defaults={"entityType"=Client::class}, name="show_client", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -192,11 +194,13 @@ class ClientController extends AbstractController
      *
      * @param Client $client
      *
+     * @ParamConverter("client", converter="DoctrineCacheConverter")
+     *
      * @return Response
      *
      * @Route({
      *     "en": "/clients/{uuid<[\w-]{36}>}"
-     * }, name="delete_client", methods={"DELETE"})
+     * }, defaults={"entityType"=Client::class}, name="delete_client", methods={"DELETE"})
      *
      * @throws \Exception
      */

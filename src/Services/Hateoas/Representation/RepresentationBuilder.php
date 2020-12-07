@@ -8,9 +8,11 @@ use App\Entity\Client;
 use App\Entity\Offer;
 use App\Entity\Partner;
 use App\Entity\Phone;
+use App\Services\API\Cache\DoctrineCacheResultListIterator;
+use Doctrine\ORM\Query;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Hateoas\Representation\PaginatedRepresentation;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
  * Class CollectionRepresentationBuilder
@@ -35,31 +37,25 @@ final class RepresentationBuilder
      * @param Request            $request
      * @param \IteratorAggregate $collectionResults
      * @param string             $collectionClassName
-     * @param array              $paginationData
      *
      * @return PaginatedRepresentation
+     *
+     * @throws \Exception
      */
     public function createPaginatedCollection(
         Request $request,
         \IteratorAggregate $collectionResults,
-        string $collectionClassName,
-        ?array $paginationData
+        string $collectionClassName
     ): PaginatedRepresentation {
-        // Define pagination parameters
+        // Get collection items (full list) total count
         $totalCount = $collectionResults->count();
-        $pageNumber = $paginationData['page'] ?? 1;
-        $perPageLimit = $paginationData['per_page'] ?? 1;
-        $message = 'Pagination %1$s (%2$s) parameter failure: expected value >= 1';
-        if ($perPageLimit < 1 || $perPageLimit > $totalCount) {
-            $message .= $totalCount > 1 ? sprintf(' or value <= %1$d', $totalCount) : '';
-            throw new BadRequestHttpException(sprintf($message, 'limit', 'per_page'));
-        }
+        $resultsRange = $this->getFirstAndMaxResultsWithIterator($collectionResults, $totalCount);
+        $firstResult = $resultsRange['firstResult'];
+        $perPageLimit = $resultsRange['maxResults'];
+        // Retrieve current page number
+        $currentPageNumber = ($firstResult + $perPageLimit) / $perPageLimit;
         // Get total page count
         $pageTotalCount = (int) ceil($totalCount / $perPageLimit);
-        if ($pageNumber < 1 || $pageNumber > $pageTotalCount) {
-            $message .= $pageTotalCount > 1 ? sprintf(' or value <= %1$d', $pageTotalCount) : '';
-            throw new BadRequestHttpException(sprintf($message, 'number', 'page'));
-        }
         $itemsLabel = self::ITEMS_LABELS[$collectionClassName];
         // Get collection representation
         $collectionRepresentation = new CollectionResourceRepresentation($collectionResults, $itemsLabel);
@@ -68,7 +64,7 @@ final class RepresentationBuilder
             $collectionRepresentation,
             $request->attributes->get('_route'), // route name
             $request->attributes->get('_route_params'), // route parameters
-            $pageNumber, // page number
+            $currentPageNumber, // current page number or 1 for full list without pagination
             $perPageLimit, // limit
             $pageTotalCount, // total pages
             'page', // page route parameter name, optional, defaults to 'page'
@@ -76,5 +72,33 @@ final class RepresentationBuilder
             true, // generate relative URIs, optional, defaults to `false`
             $totalCount // total collection size, optional, defaults to `null`
         );
+    }
+
+    /**
+     * Get first and max results parameters depending of expected iterator.
+     *
+     * @param \IteratorAggregate $collectionResults the chosen iterator
+     * @param int                $totalCount        collection items (full list) total count
+     *
+     * @return array
+     *
+     * @throws \Exception
+     */
+    private function getFirstAndMaxResultsWithIterator(\IteratorAggregate $collectionResults, int $totalCount): array
+    {
+        if (!$collectionResults instanceof DoctrineCacheResultListIterator && !$collectionResults instanceof Paginator) {
+            throw new \RuntimeException("A wrong iterator type is used for representation!");
+        }
+        // Define pagination parameters based on query
+        if ($collectionResults instanceof Paginator) {
+            /** @var Query $query */
+            $query = $collectionResults->getQuery();
+            $firstResult = $query->getFirstResult() ?? 0;
+            $perPageLimit = $query->getMaxResults() ?? $totalCount;
+        } else {
+            $firstResult = $collectionResults->getFirstResult();
+            $perPageLimit = $collectionResults->getMaxResults();
+        }
+        return ['firstResult' => $firstResult, 'maxResults' => $perPageLimit];
     }
 }

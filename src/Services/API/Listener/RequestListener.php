@@ -6,6 +6,7 @@ namespace App\Services\API\Listener;
 
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
@@ -17,6 +18,11 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 class RequestListener
 {
     /**
+     * @var ParameterBagInterface
+     */
+    private $parameterBag;
+
+    /**
      * @var ResponseBuilder
      */
     private $responseBuilder;
@@ -24,10 +30,12 @@ class RequestListener
     /**
      * RequestListener constructor.
      *
-     * @param ResponseBuilder $responseBuilder
+     * @param ParameterBagInterface $parameterBag
+     * @param ResponseBuilder       $responseBuilder
      */
-    public function __construct(ResponseBuilder $responseBuilder)
+    public function __construct(ParameterBagInterface $parameterBag, ResponseBuilder $responseBuilder)
     {
+        $this->parameterBag = $parameterBag;
         $this->responseBuilder = $responseBuilder;
     }
 
@@ -47,6 +55,11 @@ class RequestListener
             return;
         }
         $request = $event->getRequest();
+        // Check path info to avoid issue with Symfony profiler or other paths
+        $pattern = '/' . preg_quote($this->parameterBag->get('api_and_version_path_prefix'), '/'). '/';
+        if (!preg_match($pattern, $request->getPathInfo())) {
+            return;
+        }
         $wrongParameters = [];
         // Filter wrong query parameters to return a custom JSON error response with kernel exception listener
         foreach ($request->query->keys() as $parameterName) {

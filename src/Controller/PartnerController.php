@@ -9,6 +9,7 @@ use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Security\PartnerVoter;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -61,11 +62,13 @@ class PartnerController extends AbstractController
      *
      * @param Partner $partner
      *
+     * @ParamConverter("partner", converter="DoctrineCacheConverter")
+     *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}"
-     * }, name="show_partner", methods={"GET"})
+     * }, defaults={"entityType"=Partner::class}, name="show_partner", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -94,6 +97,8 @@ class PartnerController extends AbstractController
      *
      * Please note that Symfony param converter is used here to retrieve a Partner entity.
      * A custom param converter could also ease email format check in this case.
+     * No cache is used here due to email attribute which could be treated as a particular case
+     * with API custom DoctrineCacheConverter.
      *
      * @param Partner $partner
      *

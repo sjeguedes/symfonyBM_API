@@ -74,7 +74,7 @@ class AdminClientController extends AbstractController
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}/clients"
-     * }, name="list_clients_per_partner", methods={"GET"})
+     * }, defaults={"entityType"=Partner::class}, name="list_clients_per_partner", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -95,8 +95,7 @@ class AdminClientController extends AbstractController
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
             $clients,
-            Client::class,
-            $paginationData
+            Client::class
         );
         // Filter results with serialization rules (look at Client entity)
         $data = $this->serializer->serialize(
@@ -118,11 +117,13 @@ class AdminClientController extends AbstractController
      * @param Request               $request
      * @param UrlGeneratorInterface $urlGenerator
      *
+     * @ParamConverter("partner", options={"mapping": {"uuid": "uuid"}})
+     *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "partners/{uuid<[\w-]{36}>}/clients"
-     * }, name="create_partner_client", methods={"POST"})
+     * }, defaults={"entityType"=Partner::class}, name="create_partner_client", methods={"POST"})
      *
      * @throws \Exception
      */

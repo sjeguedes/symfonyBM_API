@@ -8,11 +8,16 @@ use App\Entity\Client;
 use App\Entity\Offer;
 use App\Entity\Partner;
 use App\Entity\Phone;
+use App\Services\API\Cache\DoctrineCacheResultListIterator;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
  * Class AbstractAPIRepository
@@ -21,23 +26,6 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 abstract class AbstractAPIRepository extends ServiceEntityRepository
 {
-    /**
-     * @var EntityManagerInterface
-     */
-    protected $entityManager;
-
-    /**
-     * AbstractAPIRepository constructor.
-     *
-     * @param ManagerRegistry $registry
-     * @param string          $entityClassName
-     */
-    public function __construct(ManagerRegistry $registry, string $entityClassName)
-    {
-        parent::__construct($registry, $entityClassName);
-        $this->entityManager = $this->getEntityManager();
-    }
-
     /**
      * Define entities aliases for Doctrine query builder.
      */
@@ -49,33 +37,39 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
     ];
 
     /**
-     * Find a set of entities paginated results depending on a particular Doctrine query builder,
-     * offset and limit integers parameters
-     * using Doctrine paginator.
-     *
-     * @param QueryBuilder $queryBuilder
-     * @param int          $page
-     * @param int          $limit
-     *
-     * @return \IteratorAggregate|Paginator
-     *
-     * @see https://www.doctrine-project.org/projects/doctrine-orm/en/2.7/tutorials/pagination.html
+     * Define "time to live" cache duration.
      */
-    public function filterWithPagination(QueryBuilder $queryBuilder, int $page, int $limit): \IteratorAggregate
-    {
-        $query = $queryBuilder
-            // Define offset value
-            ->setFirstResult(($page - 1) * $limit)
-            // Pass limit value
-            ->setMaxResults($limit)
-            // Get complete query
-            ->getQuery();
-        // Paginator can be returned as an IteratorAggregate implementation.
-        return new Paginator($query);
+    const DEFAULT_CACHE_TTL = 3600;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    protected $entityManager;
+
+    /**
+     * @var TagAwareCacheInterface
+     */
+    protected $cache;
+
+    /**
+     * AbstractAPIRepository constructor.
+     *
+     * @param ManagerRegistry        $registry
+     * @param TagAwareCacheInterface $doctrineCache
+     * @param string                 $entityClassName
+     */
+    public function __construct(
+        ManagerRegistry $registry,
+        TagAwareCacheInterface $doctrineCache,
+        string $entityClassName
+    ) {
+        parent::__construct($registry, $entityClassName);
+        $this->entityManager = $this->getEntityManager();
+        $this->cache = $doctrineCache;
     }
 
     /**
-     * Find all associated entities (client, Phone, ...) depending on a particular partner uuid string parameter
+     * Find all associated entities (Client, Phone, ...) depending on a particular partner uuid string parameter
      * with possible paginated results.
      *
      * @param string     $partnerUuid
@@ -91,19 +85,91 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
      *
      * Please note that this query is used for hateoas collection representation.
      *
-     * @param QueryBuilder $queryBuilder,
-     * @param array|null   $paginationData
+     * @param string        $partnerUuid
+     * @param QueryBuilder  $queryBuilder,
+     * @param array|null    $paginationData
      *
      * @return \IteratorAggregate|Paginator
+     *
+     * @see https://www.doctrine-project.org/projects/doctrine-orm/en/2.7/tutorials/pagination.html
+     *
+     * @throws \Exception
+     * @throws \Psr\Cache\InvalidArgumentException
      */
-    public function findList(QueryBuilder $queryBuilder, ?array $paginationData): \IteratorAggregate
+    public function findList(
+        string $partnerUuid,
+        QueryBuilder $queryBuilder,
+        ?array $paginationData
+    ): \IteratorAggregate {
+        $page = $paginationData['page'];
+        $limit = $paginationData['per_page'];
+        $firstResult = !\is_null($page) ? ($page - 1) * $limit : null;
+        $maxResults = $limit ?? null;
+        // Prepare data for cache and query
+        preg_match('/\\\(\w+)$/', $queryBuilder->getRootEntities()[0], $matches);
+        $listIdentifier = (!\is_null($limit) ? '_list_' . $page . '_' . $limit : '_full_list');
+        $cacheKeySuffix = $listIdentifier . "_for_partner[{$partnerUuid}]";
+        // Will produce "client_list_1_10_for_partner[0847df13-c88f-4c4a-8943-876f5ab402c5]", "phone_full_list", etc...
+        $cacheKey = $matches[1] . $cacheKeySuffix;
+        // Will produce "client_tag", "partner_tag", etc...
+        $cacheTag = lcfirst($matches[1]) . '_list_tag';
+        $parameters = [
+            'cacheKey'     => $cacheKey,
+            'cacheTag'     => $cacheTag,
+            'filter'       => ['firstResult' => $firstResult, 'maxResults' => $maxResults],
+            'queryBuilder' => $queryBuilder
+        ];
+        $data = $this->manageCacheForData($cacheKey, $matches[1], function (ItemInterface $item) use ($parameters) {
+            // Expire cache data automatically after 1 hour or earlier with "stampede prevention"
+            $item->expiresAfter(self::DEFAULT_CACHE_TTL);
+            // Tag item to ease invalidation later
+            $item->tag($parameters['cacheTag']);
+            /** @var Query $query */
+            $query = $parameters['queryBuilder']
+                // Define offset value
+                ->setFirstResult($parameters['filter']['firstResult'])
+                // Pass limit value
+                ->setMaxResults($parameters['filter']['maxResults'])
+                ->getQuery();
+            return [
+                'itemsTotalCount' => (new Paginator($query))->count(),
+                'offset'          => $query->getFirstResult(),
+                'limit'           => $query->getMaxResults(),
+                'selectedItems'   => $query->getResult()
+            ];
+        });
+        // Return custom iterator in order to serialize list later for representation
+        return new DoctrineCacheResultListIterator(
+            $data['itemsTotalCount'],
+            $data['offset'],
+            $data['limit'],
+            $data['selectedItems']
+        );
+    }
+
+    /**
+     * Manage cache item if necessary depending on a result value.
+     *
+     * @param string   $cacheKey
+     * @param string   $listType
+     * @param callable $callable
+     *
+     * @return array
+     *
+     * @throws \Exception
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
+    protected function manageCacheForData(string $cacheKey, string $listType, callable $callable): array
     {
-        // Return selected results if some exist.
-        if (!\is_null($paginationData)) {
-            return $this->filterWithPagination($queryBuilder, $paginationData['page'], $paginationData['per_page']);
+        // Get data from cache or create cache data in case of miss:
+        $data = $this->cache->get($cacheKey, $callable);
+        // Failure state: no result was found!
+        if (0 === count($data['selectedItems'])) {
+            $this->cache->delete($cacheKey);
+            throw new BadRequestHttpException(sprintf('No %s list result found', lcfirst($listType)));
         }
-        // Return results with default page 1 if some exist.
-        return new Paginator($queryBuilder->getQuery());
+        // Return data if results exist.
+        return $data;
     }
 
     /**

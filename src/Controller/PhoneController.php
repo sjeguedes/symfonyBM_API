@@ -10,6 +10,7 @@ use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -86,8 +87,7 @@ class PhoneController extends AbstractController
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
             $phones,
-            Phone::class,
-            $paginationData
+            Phone::class
         );
         // Filter results with serialization rules (look at Phone entity)
         $data = $this->serializer->serialize(
@@ -106,11 +106,13 @@ class PhoneController extends AbstractController
      *
      * @param Phone $phone
      *
+     * @ParamConverter("phone", converter="DoctrineCacheConverter")
+     *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/phones/{uuid<[\w-]{36}>}"
-     * }, name="show_phone", methods={"GET"})
+     * }, defaults={"entityType"=Phone::class}, name="show_phone", methods={"GET"})
      *
      * @throws \Exception
      */

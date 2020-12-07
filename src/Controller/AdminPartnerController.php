@@ -78,6 +78,7 @@ class AdminPartnerController extends AbstractController
         $partnerRepository = $this->getDoctrine()->getRepository(Partner::class);
         // Get complete list with possible paginated results
         $partners = $partnerRepository->findList(
+            $this->getUser()->getUuid(),
             $partnerRepository->getQueryBuilder(),
             $paginationData
         );
@@ -85,8 +86,7 @@ class AdminPartnerController extends AbstractController
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
             $partners,
-            Partner::class,
-            $paginationData
+            Partner::class
         );
         // Filter results with serialization rules (look at Partner entity)
         $data = $this->serializer->serialize(

@@ -9,6 +9,7 @@ use App\Services\API\Validator\ValidationException;
 use Doctrine\Persistence\ObjectRepository;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -52,23 +53,34 @@ final class FilterRequestHandler
     /**
      * Filter pagination data.
      *
-     * @param Request $request
-     * @param int     $perPageLimit
+     * @param Request  $request
+     * @param int|null $perPageLimit
      *
      * @return array|null
      *
      * @throws \Exception
      */
-    public function filterPaginationData(Request $request, int $perPageLimit = self::PER_PAGE_LIMIT): ?array
+    public function filterPaginationData(Request $request, ?int $perPageLimit = self::PER_PAGE_LIMIT): ?array
     {
         if (!$this->isPaginationDefined($request)) {
             return null;
         }
-        // Values validity will be checked in Hateoas RepresentationBuilder class!
-        $page = (int) $request->query->get('page');
-        // Avoid issue with parentheses when parameter is null!
-        $per_page = (int) ($request->query->get('per_page') ?? $perPageLimit);
-        return ['page' => $page, 'per_page' => $per_page];
+        // Values coherence will be checked in Hateoas RepresentationBuilder class!
+        $page = $request->query->get('page');
+        // Avoid issue with parentheses when parameter is null or with no value (empty string)!
+        $per_page = $request->query->get('per_page');
+        $per_page = (null !== $per_page && 0 !== strlen($per_page) ? $per_page : null) ?? $perPageLimit;
+        $message = 'Pagination %1$s (%2$s) parameter failure: expected value >= 1';
+        if ($page < 1) {
+            throw new BadRequestHttpException(sprintf($message, 'number', 'page'));
+        }
+        if ($per_page < 1) {
+            throw new BadRequestHttpException(sprintf($message, 'limit', 'per_page'));
+        }
+        return [
+            'page'     => (int) $page,
+            'per_page' => (int) $per_page
+        ];
     }
 
     /**
@@ -91,9 +103,10 @@ final class FilterRequestHandler
         bool $isFullListAllowed = false
     ): \IteratorAggregate {
         // Get complete list when request is made by an admin, with possible paginated results
-        // An admin has access to all existing clients with this role!
+        // An admin has access to all existing resources with this role!
         if ($isFullListAllowed) {
             $collection = $repository->findList(
+                $partnerUuid->toString(),
                 $repository->getQueryBuilder(),
                 $paginationData
             );
@@ -118,7 +131,15 @@ final class FilterRequestHandler
      */
     public function isFullListRequested(Request $request): bool
     {
-        return null !== $request->query->get('full_list') || null !== $request->query->get('catalog');
+        $catalogParameter = $request->query->get('catalog');
+        $fullListParameter = $request->query->get('full_list');
+        $isValidParameter = (null !== $catalogParameter && 0 === strlen($catalogParameter)) ||
+                            (null !== $fullListParameter && 0 === strlen($fullListParameter)) ||
+                            (null === $catalogParameter && null === $fullListParameter);
+        if (!$isValidParameter) {
+            throw new BadRequestHttpException('No value expected for \'full_list\' or \'catalog\' query parameter');
+        }
+        return $isValidParameter;
     }
 
     /**
@@ -130,7 +151,22 @@ final class FilterRequestHandler
      */
     private function isPaginationDefined(Request $request): bool
     {
-        return null !== $request->query->get('page');
+        $page = $request->query->get('page');
+        $per_page = $request->query->get('per_page');
+        // Check undefined attribute or empty string value
+        $isPage = null !== $page && 0 !== strlen($page);
+        if (!$isPage && null !== $per_page) {
+            $message = 'Pagination %1$s (%2$s) parameter failure: undefined page parameter';
+            throw new BadRequestHttpException(sprintf($message,'limit','per_page'));
+        }
+        $message = 'Pagination %1$s (%2$s) parameter failure: undefined value';
+        if (null !== $page && 0 === strlen($page)) {
+            throw new BadRequestHttpException(sprintf($message, 'number', 'page'));
+        }
+        if (null !== $per_page && 0 === strlen($per_page)) {
+            throw new BadRequestHttpException(sprintf($message, 'limit', 'per_page'));
+        }
+        return $isPage;
     }
 
     /**
