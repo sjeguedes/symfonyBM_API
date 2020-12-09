@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\API\Listener;
+namespace App\Services\API\Event\Subscriber;
 
 use App\Entity\Client;
 use App\Entity\Offer;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\API\Listener;
+namespace App\Services\API\Event\Listener;
 
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Validator\ValidationException;

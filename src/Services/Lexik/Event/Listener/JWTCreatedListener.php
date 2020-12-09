@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Lexik\Listener;
+namespace App\Services\Lexik\Event\Listener;
 
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
 

@@ -37,19 +37,19 @@ services:
             - { name: kernel.cache_warmer, priority: 0 }
 
     # add listener to invalidate cache for collection list results after operations on a particular entity.
-    App\Services\API\Listener\DoctrineSubscriber:
+    App\Services\API\Event\Subscriber\DoctrineSubscriber:
         tags:
-            - { name: 'doctrine.event_subscriber' }
+            - { name: doctrine.event_subscriber }
 
     # add exception listener with monolog API logs with a particular "api" channel
-    App\Services\API\Listener\ExceptionListener:
+    App\Services\API\Event\Listener\ExceptionListener:
         arguments:
             $logger: '@monolog.logger.api'
         tags:
             - { name: kernel.event_listener, event: kernel.exception, method: onKernelException }
 
     # add request listener
-    App\Services\API\Listener\RequestListener:
+    App\Services\API\Event\Listener\RequestListener:
         tags:
             - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
 
@@ -64,7 +64,7 @@ services:
             - jms_serializer.event_subscriber
 
     # add a Lexik listener to customise JWT payload
-    App\Services\Lexik\Listener\JWTCreatedListener:
+    App\Services\Lexik\Event\Listener\JWTCreatedListener:
         tags:
             - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_created }
 
