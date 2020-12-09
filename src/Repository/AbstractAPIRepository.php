@@ -27,6 +27,16 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 abstract class AbstractAPIRepository extends ServiceEntityRepository
 {
     /**
+     * Define Doctrine cache list results key prefix.
+     */
+    const CACHE_KEY_LIST_PREFIX = 'list_';
+
+    /**
+     * Define Doctrine cache list results tag suffix.
+     */
+    const CACHE_TAG_LIST_SUFFIX = '_list_tag';
+
+    /**
      * Define entities aliases for Doctrine query builder.
      */
     const DATABASE_ENTITIES_ALIASES = [
@@ -37,14 +47,9 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
     ];
 
     /**
-     * Define Doctrine cache list results tag suffix.
-     */
-    const CACHE_TAG_LIST_SUFFIX = '_list_tag';
-
-    /**
      * Define "time to live" cache duration.
      */
-    const DEFAULT_CACHE_TTL = 3600;
+    const DEFAULT_CACHE_TTL = 3600; // 1 hour
 
     /**
      * @var EntityManagerInterface
@@ -93,6 +98,7 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
      * @param string        $partnerUuid
      * @param QueryBuilder  $queryBuilder,
      * @param array|null    $paginationData
+     * @param bool          $isFullListAllowed
      *
      * @return \IteratorAggregate|Paginator
      *
@@ -104,19 +110,29 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
     public function findList(
         string $partnerUuid,
         QueryBuilder $queryBuilder,
-        ?array $paginationData
+        ?array $paginationData,
+        bool $isFullListAllowed = false
     ): \IteratorAggregate {
         $page = $paginationData['page'];
         $limit = $paginationData['per_page'];
         $firstResult = !\is_null($page) ? ($page - 1) * $limit : null;
         $maxResults = $limit ?? null;
         // Prepare data for cache and query
+        if (\is_null($firstResult)) {
+            $listIdentifier = self::CACHE_KEY_LIST_PREFIX . 'without_pagination_';
+        } elseif (\is_null($maxResults)) {
+            $listIdentifier = self::CACHE_KEY_LIST_PREFIX . $page . '_without_limit_';
+        } else {
+            $listIdentifier = self::CACHE_KEY_LIST_PREFIX . $page . '_' . $limit . '_';
+        }
+        // Get particular or complete list indicator
+        $listIdentifier = (!$isFullListAllowed ? '_restricted_' : '_full_') . $listIdentifier;
+        $cacheKeySuffix = $listIdentifier . 'for_consumer_' . $partnerUuid;
+        // e.g. "client_full_list_without_pagination_for_consumer_0847df13-c88f-4c4a-8943-876f5ab402c5",
+        // e.g. "client_restricted_list_1_10_for_consumer_0847df13-c88f-4c4a-8943-876f5ab402c5", etc...
         preg_match('/\\\(\w+)$/', $queryBuilder->getRootEntities()[0], $matches);
-        $listIdentifier = (!\is_null($limit) ? '_list_' . $page . '_' . $limit : '_full_list');
-        $cacheKeySuffix = $listIdentifier . "_for_partner[{$partnerUuid}]";
-        // Will produce "client_list_1_10_for_partner[0847df13-c88f-4c4a-8943-876f5ab402c5]", "phone_full_list", etc...
         $cacheKey = $matches[1] . $cacheKeySuffix;
-        // Will produce "client_list_tag", "partner_list_tag", etc...
+        // e.g. "client_list_tag", "partner_list_tag", etc...
         $cacheTag = lcfirst($matches[1]) . self::CACHE_TAG_LIST_SUFFIX;
         $parameters = [
             'cacheKey'     => $cacheKey,

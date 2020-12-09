@@ -85,7 +85,8 @@ class AdminOfferController extends AbstractController
         $offers = $offerRepository->findList(
             $this->getUser()->getUuid(),
             $offerRepository->getQueryBuilder(),
-            $paginationData
+            $paginationData,
+            true
         );
         // Get a paginated Offer collection representation
         $paginatedCollection = $representationBuilder->createPaginatedCollection(

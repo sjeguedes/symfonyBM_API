@@ -66,7 +66,7 @@ class OfferRepository extends AbstractAPIRepository
             ->leftJoin('off.phone', 'pho', 'WITH', 'pho.uuid = off.phone')
             ->where('pho.uuid = ?1')
             ->setParameter(1, $phoneUuid);
-        // Get results with or without pagination
+        // Get all results (by default) with or without pagination
         return $this->findList($partnerUuid, $queryBuilder, $paginationData);
     }
 }

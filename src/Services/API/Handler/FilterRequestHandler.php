@@ -26,8 +26,7 @@ final class FilterRequestHandler
     const AVAILABLE_FILTERS = [
         'page',
         'per_page',
-        'full_list',
-        'catalog'
+        'full_list'
     ];
 
     /**
@@ -108,7 +107,8 @@ final class FilterRequestHandler
             $collection = $repository->findList(
                 $partnerUuid->toString(),
                 $repository->getQueryBuilder(),
-                $paginationData
+                $paginationData,
+                true
             );
         // Find a set of entities when request is made by a particular partner, with possible paginated results
         } else {
@@ -128,22 +128,16 @@ final class FilterRequestHandler
      * @param Request $request
      *
      * @return bool
-     *
-     * TODO: CAUTION: method needs to be changed: wrong result returned!
-     * TODO: fix this bug in a separate next commit with $isValidParameter which is totally wrong when no parameter exists!
-     * TODO: return a state correctly instead of $isValidParameter!
      */
     public function isFullListRequested(Request $request): bool
     {
-        $catalogParameter = $request->query->get('catalog');
         $fullListParameter = $request->query->get('full_list');
-        $isValidParameter = (null !== $catalogParameter && 0 === strlen($catalogParameter)) ||
-                            (null !== $fullListParameter && 0 === strlen($fullListParameter)) ||
-                            (null === $catalogParameter && null === $fullListParameter);
-        if (!$isValidParameter) {
-            throw new BadRequestHttpException('No value expected for \'full_list\' or \'catalog\' query parameter');
+        $isParameterNotValid = null !== $fullListParameter && 0 !== strlen($fullListParameter);
+        // "full list" expects no value: define a kind of "strict" mode
+        if ($isParameterNotValid) {
+            throw new BadRequestHttpException('No value expected for \'full_list\' query parameter');
         }
-        return $isValidParameter;
+        return null !== $fullListParameter;
     }
 
     /**

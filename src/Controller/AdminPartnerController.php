@@ -80,7 +80,8 @@ class AdminPartnerController extends AbstractController
         $partners = $partnerRepository->findList(
             $this->getUser()->getUuid(),
             $partnerRepository->getQueryBuilder(),
-            $paginationData
+            $paginationData,
+            true
         );
         // Get a paginated Partner collection representation
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
