@@ -20,7 +20,7 @@ use Symfony\Component\Routing\Annotation\Route;
 /**
  * Class PhoneController
  *
- * Manage all requests simple partner user (consumer) about his selected phones data.
+ * Manage all requests from simple partner user (consumer) about his selected phones data.
  */
 class PhoneController extends AbstractController
 {

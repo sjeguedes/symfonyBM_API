@@ -36,6 +36,11 @@ services:
         tags:
             - { name: kernel.cache_warmer, priority: 0 }
 
+    # add listener to invalidate cache for collection list results after operations on a particular entity.
+    App\Services\API\Listener\DoctrineSubscriber:
+        tags:
+            - { name: 'doctrine.event_subscriber' }
+
     # add exception listener with monolog API logs with a particular "api" channel
     App\Services\API\Listener\ExceptionListener:
         arguments:
@@ -48,12 +53,10 @@ services:
         tags:
             - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
 
-    # add custom param converter to manage Doctrine cache for query and result for single entity reading
+    # add custom param converter to manage Doctrine cache for GET query and result for a single entity
     App\Services\API\ParamConverter\DoctrineCacheConverter:
         tags:
             - { name: request.param_converter, converter: DoctrineCacheConverter }
-        #arguments:
-            #$doctrineCache: '@app.cache.doctrine_tag_aware_adapter'
 
     # add JMS event subscriber for hateoas collection representation
     App\Services\Hateoas\Event\Subscriber\CollectionRepresentationSubscriber:

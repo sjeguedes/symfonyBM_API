@@ -37,6 +37,11 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
     ];
 
     /**
+     * Define Doctrine cache list results tag suffix.
+     */
+    const CACHE_TAG_LIST_SUFFIX = '_list_tag';
+
+    /**
      * Define "time to live" cache duration.
      */
     const DEFAULT_CACHE_TTL = 3600;
@@ -111,14 +116,15 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
         $cacheKeySuffix = $listIdentifier . "_for_partner[{$partnerUuid}]";
         // Will produce "client_list_1_10_for_partner[0847df13-c88f-4c4a-8943-876f5ab402c5]", "phone_full_list", etc...
         $cacheKey = $matches[1] . $cacheKeySuffix;
-        // Will produce "client_tag", "partner_tag", etc...
-        $cacheTag = lcfirst($matches[1]) . '_list_tag';
+        // Will produce "client_list_tag", "partner_list_tag", etc...
+        $cacheTag = lcfirst($matches[1]) . self::CACHE_TAG_LIST_SUFFIX;
         $parameters = [
             'cacheKey'     => $cacheKey,
             'cacheTag'     => $cacheTag,
             'filter'       => ['firstResult' => $firstResult, 'maxResults' => $maxResults],
             'queryBuilder' => $queryBuilder
         ];
+        // Store data from database in cache
         $data = $this->manageCacheForData($cacheKey, $matches[1], function (ItemInterface $item) use ($parameters) {
             // Expire cache data automatically after 1 hour or earlier with "stampede prevention"
             $item->expiresAfter(self::DEFAULT_CACHE_TTL);

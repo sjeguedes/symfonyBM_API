@@ -128,6 +128,10 @@ final class FilterRequestHandler
      * @param Request $request
      *
      * @return bool
+     *
+     * TODO: CAUTION: method needs to be changed: wrong result returned!
+     * TODO: fix this bug in a separate next commit with $isValidParameter which is totally wrong when no parameter exists!
+     * TODO: return a state correctly instead of $isValidParameter!
      */
     public function isFullListRequested(Request $request): bool
     {
