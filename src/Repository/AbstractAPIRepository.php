@@ -95,10 +95,10 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
      *
      * Please note that this query is used for hateoas collection representation.
      *
-     * @param string        $partnerUuid
-     * @param QueryBuilder  $queryBuilder,
-     * @param array|null    $paginationData
-     * @param bool          $isFullListAllowed
+     * @param string       $partnerUuid
+     * @param QueryBuilder $queryBuilder,
+     * @param array|null   $paginationData
+     * @param bool         $isFullListAllowed
      *
      * @return \IteratorAggregate|Paginator
      *
@@ -140,8 +140,26 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
             'filter'       => ['firstResult' => $firstResult, 'maxResults' => $maxResults],
             'queryBuilder' => $queryBuilder
         ];
-        // Store data from database in cache
-        $data = $this->manageCacheForData($cacheKey, $matches[1], function (ItemInterface $item) use ($parameters) {
+        // Store data from database in cache and return a custom iterator as result
+        return $data = $this->manageCacheForData($cacheKey, $matches[1], $parameters);
+    }
+
+    /**
+     * Manage results list cache item if necessary or data depending on a query.
+     *
+     * @param string $cacheKey
+     * @param string $listType
+     * @param array  $parameters
+     *
+     * @return \IteratorAggregate
+     *
+     * @throws \Exception
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
+    protected function manageCacheForData(string $cacheKey, string $listType, array $parameters): \IteratorAggregate
+    {
+        // Get data from cache or create cache data in case of miss:
+        $data = $this->cache->get($cacheKey, function (ItemInterface $item) use ($parameters) {
             // Expire cache data automatically after 1 hour or earlier with "stampede prevention"
             $item->expiresAfter(self::DEFAULT_CACHE_TTL);
             // Tag item to ease invalidation later
@@ -160,38 +178,18 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
                 'selectedItems'   => $query->getResult()
             ];
         });
-        // Return custom iterator in order to serialize list later for representation
+        // Failure state: no result was found!
+        if (0 === count($data['selectedItems'])) {
+            $this->cache->delete($cacheKey);
+            throw new BadRequestHttpException(sprintf('No %s list result found', lcfirst($listType)));
+        }
+        // Return a custom iterator in order to serialize list later for representation
         return new DoctrineCacheResultListIterator(
             $data['itemsTotalCount'],
             $data['offset'],
             $data['limit'],
             $data['selectedItems']
         );
-    }
-
-    /**
-     * Manage cache item if necessary depending on a result value.
-     *
-     * @param string   $cacheKey
-     * @param string   $listType
-     * @param callable $callable
-     *
-     * @return array
-     *
-     * @throws \Exception
-     * @throws \Psr\Cache\InvalidArgumentException
-     */
-    protected function manageCacheForData(string $cacheKey, string $listType, callable $callable): array
-    {
-        // Get data from cache or create cache data in case of miss:
-        $data = $this->cache->get($cacheKey, $callable);
-        // Failure state: no result was found!
-        if (0 === count($data['selectedItems'])) {
-            $this->cache->delete($cacheKey);
-            throw new BadRequestHttpException(sprintf('No %s list result found', lcfirst($listType)));
-        }
-        // Return data if results exist.
-        return $data;
     }
 
     /**
