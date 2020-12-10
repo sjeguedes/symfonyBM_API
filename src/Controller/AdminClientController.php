@@ -17,6 +17,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -68,7 +69,7 @@ class AdminClientController extends AbstractController
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
      *
-     * @ParamConverter("partner", options={"mapping": {"uuid": "uuid"}})
+     * @ParamConverter("partner", converter="DoctrineCacheConverter")
      *
      * @return JsonResponse
      *
@@ -117,13 +118,11 @@ class AdminClientController extends AbstractController
      * @param Request               $request
      * @param UrlGeneratorInterface $urlGenerator
      *
-     * @ParamConverter("partner", options={"mapping": {"uuid": "uuid"}})
-     *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "partners/{uuid<[\w-]{36}>}/clients"
-     * }, defaults={"entityType"=Partner::class}, name="create_partner_client", methods={"POST"})
+     * }, name="create_partner_client", methods={"POST"})
      *
      * @throws \Exception
      */
@@ -157,6 +156,42 @@ class AdminClientController extends AbstractController
                 )
             ],
             false
+        );
+    }
+
+    /**
+     * Delete a particular client associated to a particular requested partner "seller".
+     * An administrator can delete any client for every partners.
+     *
+     * Please note that Symfony param converter is used here to retrieve a Partner and Client entity.
+     *
+     * @param Partner $partner
+     * @param Client  $client
+     *
+     * @ParamConverter("partner", options={"mapping": {"pUuid": "uuid"}})
+     * @ParamConverter("client", options={"mapping": {"cUuid": "uuid"}})
+     *
+     * @return Response
+     *
+     * @Route({
+     *     "en": "partners/{pUuid<[\w-]{36}>}/clients/{cUuid<[\w-]{36}>}"
+     * }, name="delete_partner_client", methods={"DELETE"})
+     *
+     * @throws \Exception
+     */
+    public function deletePartnerClient(Partner $partner, Client $client): Response
+    {
+        // Check coherent pair of associated entities
+        if (!$partner->getClients()->contains($client)) {
+            throw new BadRequestHttpException('Selected Client to remove not associated to chosen Partner');
+        }
+        // Get partner to match client to remove and save deletion
+        $partner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
+        $this->getDoctrine()->getManager()->flush();
+        // Return a simple response without data!
+        return $this->responseBuilder->create(
+            null,
+            Response::HTTP_NO_CONTENT
         );
     }
 }

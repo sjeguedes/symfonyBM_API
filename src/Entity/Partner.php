@@ -436,6 +436,21 @@ class Partner implements UserInterface, JWTUserInterface
     }
 
     /**
+     * @param array|Client[] $clients
+     *
+     * @return $this
+     */
+    public function setClients(array $clients): self
+    {
+        foreach ($clients as $client) {
+            $this->addClient($client);
+            $client->setPartner($this);
+        }
+
+        return $this;
+    }
+
+    /**
      * @param Client $client
      *
      * @return $this
@@ -459,10 +474,6 @@ class Partner implements UserInterface, JWTUserInterface
     {
         if ($this->clients->contains($client)) {
             $this->clients->removeElement($client);
-            // set the owning side to null (unless already changed)
-            if ($client->getPartner() === $this) {
-                $client->setPartner(null);
-            }
         }
 
         return $this;

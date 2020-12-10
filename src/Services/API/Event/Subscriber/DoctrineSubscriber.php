@@ -12,7 +12,7 @@ use App\Repository\AbstractAPIRepository;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Events;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
-use Symfony\Component\Cache\Adapter\TagAwareAdapterInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
  * Class DoctrineSubscriber
@@ -37,16 +37,16 @@ class DoctrineSubscriber implements EventSubscriber
     ];
 
     /**
-     * @var TagAwareAdapterInterface
+     * @var TagAwareCacheInterface
      */
     private $cache;
 
     /**
      * DoctrineSubscriber constructor.
      *
-     * @param TagAwareAdapterInterface $doctrineCache
+     * @param TagAwareCacheInterface $doctrineCache
      */
-    public function __construct(TagAwareAdapterInterface $doctrineCache)
+    public function __construct(TagAwareCacheInterface $doctrineCache)
     {
         $this->cache = $doctrineCache;
     }
@@ -98,7 +98,7 @@ class DoctrineSubscriber implements EventSubscriber
         $className = \get_class($entity);
         // Delete particular entity cache result
         $cacheKey = self::ALLOWED_ENTITIES[$className]. '_' . $entity->getUuid()->toString();
-        $this->cache->deleteItem($cacheKey);
+        $this->cache->delete($cacheKey);
         // Delete cache result(s) for corresponding collection lists
         $this->invalidateResultListDoctrineCache($entity, $className);
     }
@@ -118,7 +118,7 @@ class DoctrineSubscriber implements EventSubscriber
         $className = \get_class($entity);
         // Delete particular entity cache result
         $cacheKey = self::ALLOWED_ENTITIES[$className]. '_' . $entity->getUuid()->toString();
-        $this->cache->deleteItem($cacheKey);
+        $this->cache->delete($cacheKey);
         // Delete cache result(s) for corresponding collection lists
         $this->invalidateResultListDoctrineCache($entity, $className);
     }

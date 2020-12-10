@@ -120,8 +120,7 @@ class ClientController extends AbstractController
      */
     public function showClient(Client $client): JsonResponse
     {
-        // Find partner client details
-        // An admin has access to all existing clients details with this permission!
+        // Check view permission (Requested client must be associated to authenticated partner.)
         $this->denyAccessUnlessGranted(
             ClientVoter::CAN_VIEW,
             $client,
@@ -194,33 +193,28 @@ class ClientController extends AbstractController
      *
      * @param Client $client
      *
-     * @ParamConverter("client", converter="DoctrineCacheConverter")
+     * @ParamConverter("client", converter="doctrine.orm")
      *
      * @return Response
      *
      * @Route({
      *     "en": "/clients/{uuid<[\w-]{36}>}"
-     * }, defaults={"entityType"=Client::class}, name="delete_client", methods={"DELETE"})
+     * }, name="delete_client", methods={"DELETE"})
      *
      * @throws \Exception
      */
     public function deleteClient(Client $client): Response
     {
-        // An admin has access to all existing clients details with this permission!
+        // Check deletion permission (Requested client must be associated to authenticated partner.)
         $this->denyAccessUnlessGranted(
             ClientVoter::CAN_DELETE,
             $client,
             'Client resource deletion action not allowed'
         );
-        // An admin has access to all existing clients details with this role!
-        $partner = $client->getPartner();
-        // A simple partner can only delete his clients!
-        if (!$this->isGranted(Partner::API_ADMIN_ROLE)) {
-            // Get authenticated partner to match client to remove and save deletion
-            /** @var Partner $partner */
-            $partner = $this->getUser();
-        }
-        $partner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
+        // Get authenticated partner to match client to remove and save deletion
+        /** @var Partner $authenticatedPartner */
+        $authenticatedPartner = $this->getUser();
+        $authenticatedPartner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
         $this->getDoctrine()->getManager()->flush();
         // Return a simple response without data!
         return $this->responseBuilder->create(
