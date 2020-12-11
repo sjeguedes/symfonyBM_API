@@ -11,6 +11,7 @@ use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Ramsey\Uuid\Uuid;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -53,6 +54,7 @@ class AdminClientController extends AbstractController
     public function __construct(
         ResponseBuilder $responseBuilder
     ) {
+        dd(strlen(md5(uniqid(Uuid::uuid4()->toString()))));
         $this->responseBuilder = $responseBuilder;
         $this->serializer = $responseBuilder->getSerializationProvider()->getSerializer();
         $this->serializationContext = $responseBuilder->getSerializationProvider()->getSerializationContext();

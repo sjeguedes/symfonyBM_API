@@ -113,7 +113,7 @@ class Client
     private $email;
 
     /**
-     * @var Partner
+     * @var Partner|null
      *
      * @ORM\ManyToOne(targetEntity=Partner::class, cascade={"persist"}, inversedBy="clients")
      * @ORM\JoinColumn(name="partner_uuid", referencedColumnName="uuid", nullable=false)
@@ -257,11 +257,11 @@ class Client
     }
 
     /**
-     * @param Partner $partner
+     * @param Partner|null $partner
      *
      * @return $this
      */
-    public function setPartner(Partner $partner): self
+    public function setPartner(?Partner $partner): self
     {
         $this->partner = $partner;
 

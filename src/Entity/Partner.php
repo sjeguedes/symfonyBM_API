@@ -474,6 +474,10 @@ class Partner implements UserInterface, JWTUserInterface
     {
         if ($this->clients->contains($client)) {
             $this->clients->removeElement($client);
+            // set the owning side to null (unless already changed)
+            if ($client->getPartner() === $this) {
+                $client->setPartner(null);
+            }
         }
 
         return $this;
