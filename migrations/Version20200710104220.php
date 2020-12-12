@@ -8,15 +8,24 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
+ * Class Version20200710104220
+ *
  * Auto-generated Migration: Please modify to your needs!
  */
 final class Version20200710104220 extends AbstractMigration
 {
+
+    /**
+     * {@inheritdoc}
+     */
     public function getDescription(): string
     {
         return '';
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
@@ -29,6 +38,9 @@ final class Version20200710104220 extends AbstractMigration
         $this->addSql('ALTER TABLE offers ADD CONSTRAINT FK_DA460427327B02B4 FOREIGN KEY (phone_uuid) REFERENCES phones (uuid)');
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function down(Schema $schema): void
     {
         // this down() migration is auto-generated, please modify it to your needs

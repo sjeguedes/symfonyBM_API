@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Client;
+use App\Entity\HTTPCache;
 use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
@@ -61,19 +62,23 @@ class ClientController extends AbstractController
      * @param FilterRequestHandler  $requestHandler
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
+     *
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/clients"
-     * }, name="list_clients", methods={"GET"})
+     * }, defaults={"entityType"=Client::class, "isCollection"=true}, name="list_clients", methods={"GET"})
      *
      * @throws \Exception
      */
     public function listClients(
         FilterRequestHandler $requestHandler,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $isFullListRequested = $requestHandler->isFullListRequested($request);
@@ -106,19 +111,21 @@ class ClientController extends AbstractController
      *
      * Please note that Symfony param converter is used here to retrieve a Client entity.
      *
-     * @param Client $client
+     * @param Client    $client
+     * @param HTTPCache $httpCache
      *
-     * @ParamConverter("client", converter="DoctrineCacheConverter")
+     * @ParamConverter("client", converter="doctrine.cache.custom_converter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/clients/{uuid<[\w-]{36}>}"
-     * }, defaults={"entityType"=Client::class}, name="show_client", methods={"GET"})
+     * }, defaults={"entityType"=Client::class, "isCollection"=false}, name="show_client", methods={"GET"})
      *
      * @throws \Exception
      */
-    public function showClient(Client $client): JsonResponse
+    public function showClient(Client $client, HTTPCache $httpCache): JsonResponse
     {
         // Check view permission (Requested client must be associated to authenticated partner.)
         $this->denyAccessUnlessGranted(

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\HTTPCache;
 use App\Entity\Offer;
 use App\Entity\Partner;
 use App\Entity\Phone;
@@ -65,19 +66,23 @@ class AdminOfferController extends AbstractController
      * @param FilterRequestHandler  $requestHandler
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
+     *
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/offers"
-     * }, name="list_offers", methods={"GET"})
+     * }, defaults={"entityType"=Offer::class, "isCollection"=true}, name="list_offers", methods={"GET"})
      *
      * @throws \Exception
      */
     public function listOffers(
         FilterRequestHandler $requestHandler,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $offerRepository = $this->getDoctrine()->getRepository(Offer::class);
@@ -113,22 +118,26 @@ class AdminOfferController extends AbstractController
      * @param Partner               $partner
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
      *
-     * @ParamConverter("partner", converter="DoctrineCacheConverter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}/offers"
-     * }, defaults={"entityType"=Partner::class}, name="list_offers_per_partner", methods={"GET"})
+     * }, defaults={"entityType"=Offer::class, "isCollection"=true}, name="list_offers_per_partner", methods={"GET"})
      *
      * @throws \Exception
+     *
+     * TODO: review entityType attribute in DoctrineCacheConverter for multiple cases: here Partner et Offer classes must be retrieved!
      */
     public function listOffersPerPartner(
         FilterRequestHandler $requestHandler,
         Partner $partner,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $offerRepository = $this->getDoctrine()->getRepository(Offer::class);
@@ -163,22 +172,26 @@ class AdminOfferController extends AbstractController
      * @param Phone                 $phone
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
      *
-     * @ParamConverter("phone", converter="DoctrineCacheConverter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/phones/{uuid<[\w-]{36}>}/offers"
-     * }, defaults={"entityType"=Phone::class}, name="list_offers_per_phone", methods={"GET"})
+     * }, defaults={"entityType"=Offer::class, "isCollection"=true}, name="list_offers_per_phone", methods={"GET"})
      *
      * @throws \Exception
+     *
+     * TODO: review entityType attribute in DoctrineCacheConverter for multiple cases: here Phone et Offer classes must be retrieved!
      */
     public function listOffersPerPhone(
         FilterRequestHandler $requestHandler,
         Phone $phone,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $offerRepository = $this->getDoctrine()->getRepository(Offer::class);
@@ -212,19 +225,21 @@ class AdminOfferController extends AbstractController
      *
      * Please note that Symfony param converter is used here to retrieve an Offer entity.
      *
-     * @param Offer $offer
+     * @param Offer     $offer
+     * @param HTTPCache $httpCache
      *
-     * @ParamConverter("offer", converter="DoctrineCacheConverter")
+     * @ParamConverter("offer", converter="doctrine.cache.custom_converter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/offers/{uuid<[\w-]{36}>}"
-     * }, defaults={"entityType"=Offer::class}, name="show_offer", methods={"GET"})
+     * }, defaults={"entityType"=Offer::class, "isCollection"=false}, name="show_offer", methods={"GET"})
      *
      * @throws \Exception
      */
-    public function showOffer(Offer $offer): JsonResponse
+    public function showOffer(Offer $offer, HTTPCache $httpCache): JsonResponse
     {
         // Filter result with serialization rules (look at Offer entity)
         $data = $this->serializer->serialize(

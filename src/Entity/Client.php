@@ -249,9 +249,9 @@ class Client
     }
 
     /**
-     * @return Partner
+     * @return Partner|null
      */
-    public function getPartner(): Partner
+    public function getPartner(): ?Partner
     {
         return $this->partner;
     }

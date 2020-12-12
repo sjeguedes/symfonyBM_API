@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\HTTPCache;
 use App\Entity\Phone;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
@@ -59,19 +60,23 @@ class PhoneController extends AbstractController
      * @param FilterRequestHandler  $requestHandler
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
+     *
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/phones"
-     * }, name="list_phones", methods={"GET"})
+     * }, defaults={"entityType"=Phone::class, "isCollection"=true}, name="list_phones", methods={"GET"})
      *
      * @throws \Exception
      */
     public function listPhones(
         FilterRequestHandler $requestHandler,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $isFullListRequested = $requestHandler->isFullListRequested($request);
@@ -104,19 +109,21 @@ class PhoneController extends AbstractController
      *
      * Please note that Symfony param converter is used here to retrieve a Phone entity.
      *
-     * @param Phone $phone
+     * @param Phone     $phone
+     * @param HTTPCache $httpCache
      *
-     * @ParamConverter("phone", converter="DoctrineCacheConverter")
+     * @ParamConverter("phone", converter="doctrine.cache.custom_converter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/phones/{uuid<[\w-]{36}>}"
-     * }, defaults={"entityType"=Phone::class}, name="show_phone", methods={"GET"})
+     * }, defaults={"entityType"=Phone::class, "isCollection"=false}, name="show_phone", methods={"GET"})
      *
      * @throws \Exception
      */
-    public function showPhone(Phone $phone): JsonResponse
+    public function showPhone(Phone $phone, HTTPCache $httpCache): JsonResponse
     {
         // Get serialized phone details (from catalog at this time)
         // Filter results with serialization rules (look at Phone entity)

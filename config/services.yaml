@@ -56,7 +56,14 @@ services:
     # add custom param converter to manage Doctrine cache for GET query and result for a single entity
     App\Services\API\ParamConverter\DoctrineCacheConverter:
         tags:
-            - { name: request.param_converter, converter: DoctrineCacheConverter, priority: false }
+            - { name: request.param_converter, converter: doctrine.cache.custom_converter, priority: 1 }
+
+    # add custom param converter to manage HTTP cache for GET request on Collection or single representation result
+    App\Services\API\ParamConverter\HTTPCacheConverter:
+        tags:
+            - { name: request.param_converter, converter: http.cache.custom_converter, priority: 0 }
+        arguments:
+            $tokenExtractor: '@lexik_jwt_authentication.extractor.authorization_header_extractor'
 
     # add JMS event subscriber for hateoas collection representation
     App\Services\Hateoas\Event\Subscriber\CollectionRepresentationSubscriber:

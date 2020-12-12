@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Client;
+use App\Entity\HTTPCache;
 use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
-use Ramsey\Uuid\Uuid;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -54,7 +54,6 @@ class AdminClientController extends AbstractController
     public function __construct(
         ResponseBuilder $responseBuilder
     ) {
-        dd(strlen(md5(uniqid(Uuid::uuid4()->toString()))));
         $this->responseBuilder = $responseBuilder;
         $this->serializer = $responseBuilder->getSerializationProvider()->getSerializer();
         $this->serializationContext = $responseBuilder->getSerializationProvider()->getSerializationContext();
@@ -70,22 +69,26 @@ class AdminClientController extends AbstractController
      * @param Partner               $partner
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
      *
-     * @ParamConverter("partner", converter="DoctrineCacheConverter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}/clients"
-     * }, defaults={"entityType"=Partner::class}, name="list_clients_per_partner", methods={"GET"})
+     * }, defaults={"entityType"=Client::class, "isCollection"=true}, name="list_clients_per_partner", methods={"GET"})
      *
      * @throws \Exception
+     *
+     * TODO: review entityType attribute in DoctrineCacheConverter for multiple cases: here Partner et Client classes must be retrieved!
      */
     public function listClientsPerPartner(
         FilterRequestHandler $requestHandler,
         Partner $partner,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $clientRepository = $this->getDoctrine()->getRepository(Client::class);

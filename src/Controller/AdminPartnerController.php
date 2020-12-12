@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\HTTPCache;
 use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -60,19 +62,23 @@ class AdminPartnerController extends AbstractController
      * @param FilterRequestHandler  $requestHandler
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
+     *
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners"
-     * }, name="list_partners", methods={"GET"})
+     * }, defaults={"entityType"=Partner::class, "isCollection"=true}, name="list_partners", methods={"GET"})
      *
      * @throws \Exception
      */
     public function listPartners(
         FilterRequestHandler $requestHandler,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $partnerRepository = $this->getDoctrine()->getRepository(Partner::class);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\HTTPCache;
 use App\Entity\Partner;
 use App\Entity\Phone;
 use App\Services\API\Builder\ResponseBuilder;
@@ -64,22 +65,26 @@ class AdminPhoneController extends AbstractController
      * @param Partner               $partner,
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
      *
-     * @ParamConverter("partner", converter="DoctrineCacheConverter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}/phones"
-     * }, defaults={"entityType"=Partner::class}, name="list_phones_per_partner", methods={"GET"})
+     * }, defaults={"entityType"=Phone::class, "isCollection"=true}, name="list_phones_per_partner", methods={"GET"})
      *
      * @throws \Exception
+     *
+     * TODO: review entityType attribute in DoctrineCacheConverter for multiple cases: here Partner et Phone classes must be retrieved!
      */
     public function listPhonesPerPartner(
         FilterRequestHandler $requestHandler,
         Partner $partner,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $phoneRepository = $this->getDoctrine()->getRepository(Phone::class);

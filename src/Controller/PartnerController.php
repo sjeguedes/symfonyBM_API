@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\HTTPCache;
 use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Security\PartnerVoter;
@@ -60,19 +61,21 @@ class PartnerController extends AbstractController
      *
      * Please note that Symfony param converter is used here to retrieve a Partner entity.
      *
-     * @param Partner $partner
+     * @param Partner   $partner
+     * @param HTTPCache $httpCache
      *
-     * @ParamConverter("partner", converter="DoctrineCacheConverter")
+     * @ParamConverter("partner", converter="doctrine.cache.custom_converter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}"
-     * }, defaults={"entityType"=Partner::class}, name="show_partner", methods={"GET"})
+     * }, defaults={"entityType"=Partner::class, "isCollection"=false}, name="show_partner", methods={"GET"})
      *
      * @throws \Exception
      */
-    public function showPartner(Partner $partner): JsonResponse
+    public function showPartner(Partner $partner, HTTPCache $httpCache): JsonResponse
     {
         // Find partner details
         // An admin has access to all existing partners (including himself) details with this permission!
@@ -98,7 +101,7 @@ class PartnerController extends AbstractController
      * Please note that Symfony param converter is used here to retrieve a Partner entity.
      * A custom param converter could also ease email format check in this case.
      * No cache is used here due to email attribute which could be treated as a particular case
-     * with API custom DoctrineCacheConverter.
+     * with API custom DoctrineCacheConverter and HTTPCacheConverter.
      *
      * @param Partner $partner
      *

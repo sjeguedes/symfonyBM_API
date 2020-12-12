@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Repository\AbstractAPIRepository;
 use App\Repository\HTTPCacheRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Uuid;
@@ -22,11 +23,17 @@ use Ramsey\Uuid\UuidInterface;
 class HTTPCache
 {
     /**
-     * Define resource distinction.
+     * Define a collection route name prefix
+     * which must be present in string to unify search.
+     */
+    const LIST_ROUTE_NAME_PREFIX = 'list_';
+
+    /**
+     * Define a resource distinction.
      */
     const RESOURCE_TYPES = [
-        'Collection',
-        'Entity'
+        'list'   => 'collection',
+        'unique' => 'entity'
     ];
 
     /**
@@ -40,21 +47,28 @@ class HTTPCache
     /**
      * @var string|null
      *
-     * @ORM\Column(type="string", length=45, unique=true)
+     * @ORM\Column(type="string")
      */
     private $routeName;
 
     /**
      * @var string|null
      *
-     * @ORM\Column(type="string", length=15)
+     * @ORM\Column(type="string")
+     */
+    private $requestURI;
+
+    /**
+     * @var string|null
+     *
+     * @ORM\Column(type="string")
      */
     private $type;
 
     /**
      * @var string|null
      *
-     * @ORM\Column(type="string", length=15)
+     * @ORM\Column(type="string")
      */
     private $classShortName;
 
@@ -73,6 +87,14 @@ class HTTPCache
     private $etagToken;
 
     /**
+     * @var Partner|null
+     *
+     * @ORM\ManyToOne(targetEntity=Partner::class)
+     * @ORM\JoinColumn(name="partner_uuid", referencedColumnName="uuid", nullable=false)
+     */
+    private $partner;
+
+    /**
      * @var \DateTimeImmutable
      *
      * @ORM\Column(type="datetime_immutable")
@@ -88,12 +110,21 @@ class HTTPCache
 
     /**
      * HTTPCache constructor.
+     *
+     * @throws \Exception
      */
     public function __construct()
     {
         $this->uuid = Uuid::uuid4();
         $this->creationDate = new \DateTimeImmutable();
+        // Last-Modified (to use with date format specification)
         $this->updateDate = new \DateTimeImmutable();
+        // Etag
+        $this->etagToken = md5(
+            uniqId($this->uuid->toString() . $this->updateDate->getTimestamp())
+        );
+        // Cache-Control max age or Expires (ttl to use with date format specification)
+        $this->ttlExpiration = AbstractAPIRepository::DEFAULT_CACHE_TTL;
     }
 
     /**
@@ -122,6 +153,26 @@ class HTTPCache
     public function setRouteName(string $routeName): self
     {
         $this->routeName = $routeName;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getRequestURI(): ?string
+    {
+        return $this->requestURI;
+    }
+
+    /**
+     * @param string $requestURI
+     *
+     * @return $this
+     */
+    public function setRequestURI(string $requestURI): self
+    {
+        $this->requestURI = $requestURI;
 
         return $this;
     }
@@ -198,17 +249,39 @@ class HTTPCache
      */
     public function getEtagToken(): ?string
     {
-        return $this->etagToken;
+        return md5(
+            uniqId($this->uuid->toString() . $this->updateDate->getTimestamp())
+        );
     }
 
     /**
-     * @param UuidInterface $uuid
+     * @param string $token
      *
      * @return $this
      */
-    public function setEtagToken(UuidInterface $uuid): self
+    public function setEtagToken(string $token): self
     {
-        $this->etagToken = md5(uniqId($uuid->toString()));
+        $this->etagToken = $token;
+
+        return $this;
+    }
+
+    /**
+     * @return Partner|null
+     */
+    public function getPartner(): Partner
+    {
+        return $this->partner;
+    }
+
+    /**
+     * @param Partner|null $partner
+     *
+     * @return $this
+     */
+    public function setPartner(?Partner $partner): self
+    {
+        $this->partner = $partner;
 
         return $this;
     }
