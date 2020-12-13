@@ -88,7 +88,7 @@ class PartnerVoter extends Voter
     }
 
     /**
-     * Check if an authenticated partner can delete or view a Client resource.
+     * Check if an authenticated partner can view requested partner information.
      *
      * @param Partner               $partner
      * @param UserInterface|Partner $authenticatedPartner
@@ -99,6 +99,7 @@ class PartnerVoter extends Voter
     {
         // Check simple partner
         if (!$this->securityChecker->isGranted(Partner::API_ADMIN_ROLE)) {
+            // Check if requested partner and authenticated partner are not the same!
             $requestedPartnerUuid = $partner->getUuid()->toString();
             $authenticatedPartnerUuid = $authenticatedPartner->getUuid()->toString();
             if ($requestedPartnerUuid !== $authenticatedPartnerUuid) {

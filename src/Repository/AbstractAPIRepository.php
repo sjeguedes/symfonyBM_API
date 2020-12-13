@@ -15,6 +15,7 @@ use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
+use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
@@ -142,6 +143,29 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
         ];
         // Store data from database in cache and return a custom iterator as result
         return $data = $this->manageCacheForData($cacheKey, $matches[1], $parameters);
+    }
+
+    /**
+     * Find a single entity instance by uuid.
+     *
+     * @param QueryBuilder  $queryBuilder
+     * @param string        $rootAlias
+     * @param UuidInterface $uuid
+     *
+     * @return object|null
+     *
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function findOneByUuid(
+        QueryBuilder $queryBuilder,
+        string $rootAlias,
+        UuidInterface $uuid
+    ): ?object {
+        return $queryBuilder
+            ->where($rootAlias . '.uuid = ?1')
+            ->getQuery()
+            ->setParameter(1, $uuid->toString())
+            ->getOneOrNullResult();
     }
 
     /**

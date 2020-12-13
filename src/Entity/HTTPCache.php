@@ -120,11 +120,23 @@ class HTTPCache
         // Last-Modified (to use with date format specification)
         $this->updateDate = new \DateTimeImmutable();
         // Etag
-        $this->etagToken = md5(
-            uniqId($this->uuid->toString() . $this->updateDate->getTimestamp())
-        );
+        $this->etagToken = $this->generateUniqueEtag($this->updateDate);
         // Cache-Control max age or Expires (ttl to use with date format specification)
         $this->ttlExpiration = AbstractAPIRepository::DEFAULT_CACHE_TTL;
+    }
+
+    /**
+     * Create a custom Etag token.
+     *
+     * @param \DateTimeImmutable $updateDate
+     *
+     * @return string
+     */
+    private function generateUniqueEtag(\DateTimeImmutable $updateDate): string
+    {
+        return md5(
+            uniqId($this->uuid->toString() . $updateDate->getTimestamp())
+        );
     }
 
     /**
@@ -255,13 +267,13 @@ class HTTPCache
     }
 
     /**
-     * @param string $token
+     * @param \DateTimeImmutable $updateDate
      *
      * @return $this
      */
-    public function setEtagToken(string $token): self
+    public function setEtagToken(\DateTimeImmutable $updateDate): self
     {
-        $this->etagToken = $token;
+        $this->etagToken = $this->generateUniqueEtag($updateDate);
 
         return $this;
     }

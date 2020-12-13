@@ -77,6 +77,8 @@ final class HTTPCacheConverter implements ParamConverterInterface
         $routeName = $request->get('_route');
         $entityAttributeName = $configuration->getName();
         // No result was found, so create a HTTPCache instance which corresponds to this request!
+        // TODO: this is a wrong approach since authorization is not called at this level!
+        // TODO: move HTTPCache instance persistence in ResponseBuilder method to be sure it is useful to get a new one!
         if (\is_null($result = $this->queryHTTPCache($requestURI, $authenticatedPartner))) {
             // Get Necessary Data
             $type = $isCollection ? HTTPCache::RESOURCE_TYPES['list'] : HTTPCache::RESOURCE_TYPES['unique'];
@@ -91,7 +93,7 @@ final class HTTPCacheConverter implements ParamConverterInterface
             $this->entityManager->persist($result);
             $this->entityManager->flush();
         }
-        // Set requested http cache attribute $configuration->getName() with corresponding hydrated Entity instance
+        // Set requested http cache attribute $configuration->getName() with corresponding hydrated entity instance
         $request->attributes->set($entityAttributeName, $result);
         // Return success state: instance was retrieved!
         return true;
@@ -113,12 +115,13 @@ final class HTTPCacheConverter implements ParamConverterInterface
         if (!$token) {
             throw new AccessDeniedHttpException('No Authorization Bearer Token found');
         }
-        // Get authenticated Partner with uuid from JWT payload
+        // Get authenticated Partner with uuid from JWT payload (cache also the query thanks to DQL)
         try {
             $data = $this->jwtEncoder->decode($token);
             /** @var PartnerRepository $partnerRepository */
             $partnerRepository = $this->entityManager->getRepository(Partner::class);
             /** @var Partner|JWTUser $partner */
+            // TODO: use query builder in repository class to cache query!
             if (\is_null($partner = $partnerRepository->find($data['uuid']))) {
                 throw new UserNotFoundException(
                     'email',
@@ -158,18 +161,15 @@ final class HTTPCacheConverter implements ParamConverterInterface
      * @param Partner $authenticatedPartner
      *
      * @return HTTPCache|null
+     *
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     private function queryHTTPCache(string $requestURI, Partner $authenticatedPartner): ?HTTPCache
     {
         /** @var HTTPCacheRepository $repository */
         $repository = $this->entityManager->getRepository(HTTPCache::class);
-        // Find data and get entity instance (HTTPCache metadata and query are cached!)
-        $httpCache = $repository->findOneBy([
-            'requestURI' => $requestURI,
-            'partner'    => $authenticatedPartner
-        ]);
-        /** @var HTTPCache $httpCache */
-        return $httpCache;
+        // Find data and get entity instance (HTTPCache metadata and query with DQL are cached!)
+        return $repository->findOneByPartnerAndRequestURI($authenticatedPartner, $requestURI);
     }
 
     /**

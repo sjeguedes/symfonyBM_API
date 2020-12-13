@@ -7,10 +7,13 @@ namespace App\Controller;
 use App\Entity\Client;
 use App\Entity\HTTPCache;
 use App\Entity\Partner;
+use App\Repository\PartnerRepository;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\API\Security\ClientVoter;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ObjectManager;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
@@ -221,6 +224,11 @@ class ClientController extends AbstractController
         // Get authenticated partner to match client to remove and save deletion
         /** @var Partner $authenticatedPartner */
         $authenticatedPartner = $this->getUser();
+        // Particular case: remove client depending on partner owner if authenticated partner has admin role!
+        if ($this->isGranted(Partner::API_ADMIN_ROLE)) {
+            // Possibly use a fake authenticated partner if admin is not the client owner!
+            $authenticatedPartner = $this->getClientAssociatedPartnerOwner($authenticatedPartner, $client);
+        }
         $authenticatedPartner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
         $this->getDoctrine()->getManager()->flush();
         // Return a simple response without data!
@@ -228,5 +236,25 @@ class ClientController extends AbstractController
             null,
             Response::HTTP_NO_CONTENT
         );
+    }
+
+    /**
+     * Get Client entity corresponding (associated) Partner owner.
+     *
+     * @param Partner $authenticatedPartner
+     * @param Client  $client
+     *
+     * @return Partner
+     */
+    private function getClientAssociatedPartnerOwner(
+        Partner $authenticatedPartner,
+        Client $client
+    ): object {
+        $authenticatedPartnerUuid = $authenticatedPartner->getUuid();
+        $clientPartnerUuid = $client->getPartner()->getUuid();
+        if ($authenticatedPartnerUuid->toString() !== $clientPartnerUuid->toString()) {
+            return $client->getPartner();
+        }
+        return $authenticatedPartner;
     }
 }

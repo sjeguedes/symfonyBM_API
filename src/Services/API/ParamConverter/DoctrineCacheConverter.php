@@ -12,6 +12,7 @@ use App\Repository\AbstractAPIRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ObjectRepository;
+use Ramsey\Uuid\Uuid;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;
 use Symfony\Component\Cache\Adapter\TagAwareAdapterInterface;
@@ -70,7 +71,6 @@ class DoctrineCacheConverter implements ParamConverterInterface
      *
      * {@inheritdoc}
      *
-     * @throws \Exception
      * @throws \Psr\Cache\InvalidArgumentException
      */
     public function apply(Request $request, ParamConverter $configuration): bool
@@ -92,17 +92,23 @@ class DoctrineCacheConverter implements ParamConverterInterface
             $item->expiresAfter(AbstractAPIRepository::DEFAULT_CACHE_TTL);
             // Tag item to ease invalidation later
             $item->tag($parameters['cacheTag']); // "client_tag", "phone_tag", ...
-            /** @var ObjectRepository $repository */
-            $repository = $this->entityManager->getRepository($parameters['class']);
-            // Find data and get entity instance, and then cache result
+            /** @var ObjectRepository $entityRepository */
+            $entityRepository = $this->entityManager->getRepository($parameters['class']);
             /** @var QueryBuilder $queryBuilder */
-            $queryBuilder = $repository->getQueryBuilder();
+            $queryBuilder = $entityRepository->getQueryBuilder();
             $rootAlias = $queryBuilder->getRootAliases()[0];
-            return $queryBuilder
+            // Find data and get entity instance, and then cache result (cache also the query thanks to DQL)
+            return $entityRepository->findOneByUuid(
+                $queryBuilder,
+                $rootAlias,
+                Uuid::fromString($parameters['uuid'])
+            );
+
+            /*return $queryBuilder
                 ->andWhere($rootAlias . '.uuid = ?1')
                 ->getQuery()
                 ->setParameter(1, $parameters['uuid'])
-                ->getOneOrNullResult();
+                ->getOneOrNullResult();*/
         });
         // Failure state: no result was found!
         if (\is_null($result)) {
