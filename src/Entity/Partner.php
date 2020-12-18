@@ -104,7 +104,7 @@ class Partner implements UserInterface, JWTUserInterface
     private $uuid;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -113,7 +113,7 @@ class Partner implements UserInterface, JWTUserInterface
     private $type;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -122,7 +122,7 @@ class Partner implements UserInterface, JWTUserInterface
     private $username;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=320, unique=true)
      *
@@ -131,7 +131,7 @@ class Partner implements UserInterface, JWTUserInterface
     private $email;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=98, unique=true)
      *
@@ -140,7 +140,7 @@ class Partner implements UserInterface, JWTUserInterface
     private $password;
 
     /**
-     * @var string
+     * @var string|null an unmapped property
      */
     private $plainPassword;
 

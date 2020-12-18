@@ -81,7 +81,7 @@ class PhoneController extends AbstractController
      *
      * @Route({
      *     "en": "/phones"
-     * }, defaults={"entityType"=Phone::class, "isCollection"=true}, name="list_phones", methods={"GET"})
+     * }, defaults={"isCollection"=true}, name="list_phones", methods={"GET"})
      *
      * @throws \Exception
      */

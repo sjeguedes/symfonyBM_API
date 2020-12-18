@@ -6,6 +6,7 @@ namespace App\Services\API\ParamConverter;
 
 use App\Entity\HTTPCache;
 use App\Entity\Partner;
+use App\Repository\AbstractAPIRepository;
 use App\Repository\HTTPCacheRepository;
 use App\Repository\PartnerRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -15,6 +16,7 @@ use Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTDecodeFailureException;
 use Lexik\Bundle\JWTAuthenticationBundle\Exception\UserNotFoundException;
 use Lexik\Bundle\JWTAuthenticationBundle\Security\User\JWTUser;
 use Lexik\Bundle\JWTAuthenticationBundle\TokenExtractor\AuthorizationHeaderTokenExtractor;
+use Ramsey\Uuid\Uuid;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -103,6 +105,8 @@ final class HTTPCacheConverter implements ParamConverterInterface
      * @return Partner
      *
      * @see https://symfonycasts.com/screencast/symfony-rest4/jwt-guard-authenticator
+     *
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     private function getUserFromJWT(Request $request): Partner
     {
@@ -111,14 +115,18 @@ final class HTTPCacheConverter implements ParamConverterInterface
         if (!$token) {
             throw new UnauthorizedHttpException('No Authorization Bearer Token found');
         }
-        // Get authenticated Partner with uuid from JWT payload (cache also the query thanks to DQL)
+        // Get authenticated Partner with uuid from JWT payload
         try {
             $data = $this->jwtEncoder->decode($token);
             /** @var PartnerRepository $partnerRepository */
             $partnerRepository = $this->entityManager->getRepository(Partner::class);
+            // Cache also the query thanks to DQL and common query method
             /** @var Partner|JWTUser $partner */
-            // TODO: use query builder in repository class to cache query!
-            if (\is_null($partner = $partnerRepository->find($data['uuid']))) {
+            if (\is_null($partner = $partnerRepository->findOneByUuid(
+                $partnerRepository->getQueryBuilder(),
+                AbstractAPIRepository::DATABASE_ENTITIES_ALIASES[Partner::class],
+                Uuid::fromString($data['uuid'])
+            ))) {
                 throw new UserNotFoundException('email', $data['email']);
             }
         } catch (JWTDecodeFailureException $exception) {

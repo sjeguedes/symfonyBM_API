@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * Class ClientController
@@ -83,7 +84,7 @@ class ClientController extends AbstractController
      *
      * @Route({
      *     "en": "/clients"
-     * }, defaults={"entityType"=Client::class, "isCollection"=true}, name="list_clients", methods={"GET"})
+     * }, defaults={"isCollection"=true}, name="list_clients", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -284,12 +285,10 @@ class ClientController extends AbstractController
      * @param Partner $authenticatedPartner
      * @param Client  $client
      *
-     * @return Partner
+     * @return Partner|UserInterface
      */
-    private function getClientAssociatedPartnerOwner(
-        Partner $authenticatedPartner,
-        Client $client
-    ): object {
+    private function getClientAssociatedPartnerOwner(Partner $authenticatedPartner, Client $client): Partner
+    {
         $authenticatedPartnerUuid = $authenticatedPartner->getUuid();
         $clientPartnerUuid = $client->getPartner()->getUuid();
         if ($authenticatedPartnerUuid->toString() !== $clientPartnerUuid->toString()) {

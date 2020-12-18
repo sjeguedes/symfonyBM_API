@@ -80,18 +80,16 @@ class AdminPhoneController extends AbstractController
      * @param Request               $request
      * @param HTTPCache             $httpCache
      *
-     * TODO: add Partner custom DoctrineCacheConverter
+     * @ParamConverter("partner", converter="doctrine.cache.custom_converter")
      * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}/phones"
-     * }, defaults={"entityType"=Phone::class, "isCollection"=true}, name="list_phones_per_partner", methods={"GET"})
+     * }, defaults={"entityType"=Partner::class, "isCollection"=true}, name="list_phones_per_partner", methods={"GET"})
      *
      * @throws \Exception
-     *
-     * TODO: review entityType attribute in DoctrineCacheConverter for multiple cases: here Partner et Phone classes must be retrieved!
      */
     public function listPhonesPerPartner(
         FilterRequestHandler $requestHandler,

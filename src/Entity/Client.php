@@ -86,7 +86,7 @@ class Client
     private $uuid;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -95,7 +95,7 @@ class Client
     private $type;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -104,7 +104,7 @@ class Client
     private $name;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=320, unique=true)
      *

@@ -61,11 +61,11 @@ final class ResponseBuilder
     /**
      * Return a JSON response instance.
      *
-     * @param string|null $data          a JSON response string or custom message
-     * @param int         $statusCode    a response status code
-     * @param array       $headers       an array of response headers
-     * @param bool        $isAlreadyJson
-     * @param int        $cacheConfig    a kind of cache is used (e.g. Symfony reverse proxy, private browser cache)
+     * @param string|null $data            a JSON response string or custom message
+     * @param int         $statusCode      a response status code
+     * @param array       $headers         an array of response headers
+     * @param bool        $isAlreadyJson   define if data is JSON formatted
+     * @param int         $httpCacheConfig a kind of cache is used (e.g. Symfony reverse proxy, private browser cache)
      *
      * @return JsonResponse
      *
@@ -76,7 +76,7 @@ final class ResponseBuilder
         int $statusCode = 200,
         array $headers = [],
         bool $isAlreadyJson = true,
-        int $cacheConfig = HTTPCache::NONE
+        int $httpCacheConfig = HTTPCache::NONE
     ): JsonResponse {
         // Define HAL format added to JSON response by default
         $headers['Content-Type'] = 'application/hal+json';
@@ -90,9 +90,9 @@ final class ResponseBuilder
         }
         $response = new JsonResponse($data, $statusCode, $headers, true);
         // Force re-validation in case of cache expiration
-        if (HTTPCache::NONE !== $cacheConfig) {
+        if (HTTPCache::NONE !== $httpCacheConfig) {
             $response->headers->addCacheControlDirective(
-                HTTPCache::PROXY_CACHE === $cacheConfig ? 'proxy-revalidate' : 'must-revalidate'
+                HTTPCache::PROXY_CACHE === $httpCacheConfig ? 'proxy-revalidate' : 'must-revalidate'
             );
         }
         // Return standard JSON response for all cases
@@ -143,6 +143,7 @@ final class ResponseBuilder
         $defaultCustomCacheHeaders = [
             'X-App-Cache-Ttl' => $httpCache->getTtlExpiration(),
             'X-App-Cache-Id'  => $httpCache->getUuid()->toString(),
+            // CAUTION: "Authorization" header must (not sure about this!) be precised to keep stateless process active!
             'Vary'            => ['Authorization', 'X-App-Cache']
         ];
         // Merge and make final array with unique entries

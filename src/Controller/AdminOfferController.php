@@ -87,7 +87,7 @@ class AdminOfferController extends AbstractController
      *
      * @Route({
      *     "en": "/offers"
-     * }, defaults={"entityType"=Offer::class, "isCollection"=true}, name="list_offers", methods={"GET"})
+     * }, defaults={"isCollection"=true}, name="list_offers", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -153,18 +153,16 @@ class AdminOfferController extends AbstractController
      * @param Request               $request
      * @param HTTPCache             $httpCache
      *
-     * TODO: add Partner custom DoctrineCacheConverter
+     * @ParamConverter("partner", converter="doctrine.cache.custom_converter")
      * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}/offers"
-     * }, defaults={"entityType"=Offer::class, "isCollection"=true}, name="list_offers_per_partner", methods={"GET"})
+     * }, defaults={"entityType"=Partner::class, "isCollection"=true}, name="list_offers_per_partner", methods={"GET"})
      *
      * @throws \Exception
-     *
-     * TODO: review entityType attribute in DoctrineCacheConverter for multiple cases: here Partner et Offer classes must be retrieved!
      */
     public function listOffersPerPartner(
         FilterRequestHandler $requestHandler,
@@ -229,18 +227,16 @@ class AdminOfferController extends AbstractController
      * @param Request               $request
      * @param HTTPCache             $httpCache
      *
-     * TODO: add Phone custom DoctrineCacheConverter
+     * @ParamConverter("phone", converter="doctrine.cache.custom_converter")
      * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/phones/{uuid<[\w-]{36}>}/offers"
-     * }, defaults={"entityType"=Offer::class, "isCollection"=true}, name="list_offers_per_phone", methods={"GET"})
+     * }, defaults={"entityType"=Phone::class, "isCollection"=true}, name="list_offers_per_phone", methods={"GET"})
      *
      * @throws \Exception
-     *
-     * TODO: review entityType attribute in DoctrineCacheConverter for multiple cases: here Phone et Offer classes must be retrieved!
      */
     public function listOffersPerPhone(
         FilterRequestHandler $requestHandler,
