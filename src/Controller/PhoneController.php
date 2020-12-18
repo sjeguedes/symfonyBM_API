@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\HTTPCache;
 use App\Entity\Phone;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,7 +22,7 @@ use Symfony\Component\Routing\Annotation\Route;
 /**
  * Class PhoneController
  *
- * Manage all requests simple partner user (consumer) about his selected phones data.
+ * Manage all requests from a simple partner user (consumer) about his selected phones data.
  */
 class PhoneController extends AbstractController
 {
@@ -55,22 +58,38 @@ class PhoneController extends AbstractController
      * or all the referenced products (catalog filter or when request is made by an admin)
      * with (Doctrine paginated results) or without pagination.
      *
+     * Please note that Symfony custom param converter is used here
+     * to retrieve a HTTPCache strategy entity.
+     * "Cache" Annotation below is more useful when private cache (e.g. the browser directly) is used
+     * instead of proxy cache like Symfony reverse proxy!
+     *
+     * @Cache(
+     *     public=true,
+     *     maxage="httpCache.getTtlExpiration()",
+     *     lastModified="httpCache.getUpdateDate()",
+     *     etag="httpCache.getEtagToken()"
+     * )
+     *
      * @param FilterRequestHandler  $requestHandler
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
+     *
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/phones"
-     * }, name="list_phones", methods={"GET"})
+     * }, defaults={"isCollection"=true}, name="list_phones", methods={"GET"})
      *
      * @throws \Exception
      */
     public function listPhones(
         FilterRequestHandler $requestHandler,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $isFullListRequested = $requestHandler->isFullListRequested($request);
@@ -86,8 +105,7 @@ class PhoneController extends AbstractController
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
             $phones,
-            Phone::class,
-            $paginationData
+            Phone::class
         );
         // Filter results with serialization rules (look at Phone entity)
         $data = $this->serializer->serialize(
@@ -95,26 +113,50 @@ class PhoneController extends AbstractController
             'json',
             $this->serializationContext->setGroups(['Default', 'Phone_list'])
         );
-        // Pass JSON data string to response
-        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
+        // Pass JSON data string to response and HTTP cache headers for reverse proxy cache
+        return $this->responseBuilder
+            ->createJson(
+                $data,
+                Response::HTTP_OK,
+                // Differentiate cached response
+                $this->responseBuilder->mergeHttpCacheCustomHeaders($httpCache),
+                true,
+                HTTPCache::PROXY_CACHE
+            )
+            // Cache response with expiration/validation strategy
+            ->setCache($this->responseBuilder->setHttpCacheStrategyHeaders($httpCache));
     }
 
     /**
      * Show details about a particular phone provided by complete available list (catalog).
      *
-     * Please note that Symfony param converter is used here to retrieve a Phone entity.
+     * Please note that Symfony custom param converters are used here
+     * to retrieve a Phone resource entity and HTTPCache strategy entity.
+     * "Cache" Annotation below is more useful when private cache (e.g. the browser directly) is used
+     * instead of proxy cache like Symfony reverse proxy!
      *
-     * @param Phone $phone
+     * @Cache(
+     *     public=true,
+     *     maxage="httpCache.getTtlExpiration()",
+     *     lastModified="httpCache.getUpdateDate()",
+     *     etag="httpCache.getEtagToken()"
+     * )
+     *
+     * @param Phone     $phone
+     * @param HTTPCache $httpCache
+     *
+     * @ParamConverter("phone", converter="doctrine.cache.custom_converter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/phones/{uuid<[\w-]{36}>}"
-     * }, name="show_phone", methods={"GET"})
+     * }, defaults={"entityType"=Phone::class, "isCollection"=false}, name="show_phone", methods={"GET"})
      *
      * @throws \Exception
      */
-    public function showPhone(Phone $phone): JsonResponse
+    public function showPhone(Phone $phone, HTTPCache $httpCache): JsonResponse
     {
         // Get serialized phone details (from catalog at this time)
         // Filter results with serialization rules (look at Phone entity)
@@ -122,9 +164,20 @@ class PhoneController extends AbstractController
             $phone,
             'json',
             $this->serializationContext->setGroups(['Default', 'Phone_detail'])
-            // Exclude Offer collection since it is not interesting as a simple partner!
+            // IMPORTANT: Exclude Offer collection for a simple partner
+            // since it is not interesting/expected in this case!
         );
-        // Pass JSON data string to response
-        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
+        // Pass JSON data string to response and HTTP cache headers for reverse proxy cache
+        return $this->responseBuilder
+            ->createJson(
+                $data,
+                Response::HTTP_OK,
+                // Differentiate cached response
+                $this->responseBuilder->mergeHttpCacheCustomHeaders($httpCache),
+                true,
+                HTTPCache::PROXY_CACHE
+            )
+            // Cache response with expiration/validation strategy
+            ->setCache($this->responseBuilder->setHttpCacheStrategyHeaders($httpCache));
     }
 }

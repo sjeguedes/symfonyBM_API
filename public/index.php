@@ -1,6 +1,7 @@
 <?php
 
 use App\Kernel;
+use App\Services\API\Cache\CacheKernel;
 use Symfony\Component\ErrorHandler\Debug;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -21,6 +22,15 @@ if ($trustedHosts = $_SERVER['TRUSTED_HOSTS'] ?? false) {
 }
 
 $kernel = new Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+
+// IMPORTANT: wrap the default Kernel with the CacheKernel (reverse proxy) one
+// in 'dev' (to check correct cache management)
+// or 'prod' environment to improve response delay performance
+if ('dev' === $kernel->getEnvironment() || 'prod' === $kernel->getEnvironment()) {
+    // Please noe this activate Symfony reverse proxy!
+    $kernel = new CacheKernel($kernel);
+}
+
 $request = Request::createFromGlobals();
 $response = $kernel->handle($request);
 $response->send();

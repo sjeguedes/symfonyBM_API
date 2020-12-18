@@ -1,16 +1,14 @@
-# configuration example: https://github.com/symfony/recipes/blob/master/doctrine/doctrine-bundle/1.6/config/packages/prod/doctrine.yaml
 doctrine:
     orm:
-        auto_generate_proxy_classes: false
         metadata_cache_driver:
             type: service
             id: app.cache.doctrine_provider
         query_cache_driver:
             type: service
             id: app.cache.doctrine_provider
-            # Result cache is directly managed in classes with custom adapter
-            # with Symfony cache depending on called queries
-            #result_cache_driver:
+        # Result cache is directly managed in classes with custom adapter
+        # with Symfony cache depending on called queries
+        #result_cache_driver:
             #type: service
             #id: app.cache.doctrine_provider
 
@@ -47,5 +45,5 @@ services:
 
 framework:
     cache:
-    # Define cache pools if needed
-    #pools:
+        # Define cache pools if needed
+        #pools:

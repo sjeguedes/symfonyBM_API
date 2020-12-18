@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Partner;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
  * Class PartnerRepository
@@ -20,11 +20,12 @@ class PartnerRepository extends AbstractAPIRepository implements UserLoaderInter
     /**
      * PartnerRepository constructor.
      *
-     * @param ManagerRegistry $registry
+     * @param ManagerRegistry        $registry
+     * @param TagAwareCacheInterface $doctrineCache
      */
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, TagAwareCacheInterface $doctrineCache)
     {
-        parent::__construct($registry, Partner::class);
+        parent::__construct($registry, $doctrineCache, Partner::class);
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\HTTPCache;
 use App\Entity\Partner;
 use App\Entity\Phone;
 use App\Services\API\Builder\ResponseBuilder;
@@ -11,6 +12,8 @@ use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -59,16 +62,32 @@ class AdminPhoneController extends AbstractController
      * List all associated phones for a particular authenticated partner
      * with (Doctrine paginated results) or without pagination.
      *
+     * Please note that Symfony custom param converters are used here
+     * to retrieve a Partner resource entity and HTTPCache strategy entity.
+     * "Cache" Annotation below is more useful when private cache (e.g. the browser directly) is used
+     * instead of proxy cache like Symfony reverse proxy!
+     *
+     * @Cache(
+     *     public=true,
+     *     maxage="httpCache.getTtlExpiration()",
+     *     lastModified="httpCache.getUpdateDate()",
+     *     etag="httpCache.getEtagToken()"
+     * )
+     *
      * @param FilterRequestHandler  $requestHandler,
      * @param Partner               $partner,
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
+     *
+     * @ParamConverter("partner", converter="doctrine.cache.custom_converter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}/phones"
-     * }, name="list_phones_per_partner", methods={"GET"})
+     * }, defaults={"entityType"=Partner::class, "isCollection"=true}, name="list_phones_per_partner", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -76,7 +95,8 @@ class AdminPhoneController extends AbstractController
         FilterRequestHandler $requestHandler,
         Partner $partner,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $phoneRepository = $this->getDoctrine()->getRepository(Phone::class);
@@ -89,8 +109,7 @@ class AdminPhoneController extends AbstractController
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
             $phones,
-            Phone::class,
-            $paginationData
+            Phone::class
         );
         // Filter results with serialization rules (look at Phone entity)
         $data = $this->serializer->serialize(
@@ -98,7 +117,17 @@ class AdminPhoneController extends AbstractController
             'json',
             $this->serializationContext->setGroups(['Default', 'Phone_list'])
         );
-        // Pass JSON data string to response
-        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
+        // Pass JSON data string to response and HTTP cache headers for reverse proxy cache
+        return $this->responseBuilder
+            ->createJson(
+                $data,
+                Response::HTTP_OK,
+                // Differentiate cached response
+                $this->responseBuilder->mergeHttpCacheCustomHeaders($httpCache),
+                true,
+                HTTPCache::PROXY_CACHE
+            )
+            // Cache response with expiration/validation strategy
+            ->setCache($this->responseBuilder->setHttpCacheStrategyHeaders($httpCache));
     }
 }

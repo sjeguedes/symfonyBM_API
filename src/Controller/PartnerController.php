@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\HTTPCache;
 use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Security\PartnerVoter;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -57,19 +60,33 @@ class PartnerController extends AbstractController
     /**
      * Show details about a particular partner.
      *
-     * Please note that Symfony param converter is used here to retrieve a Partner entity.
+     * Please note that Symfony custom param converters are used here
+     * to retrieve a Partner resource entity and HTTPCache strategy entity.
+     * "Cache" Annotation below is more useful when private cache (e.g. the browser directly) is used
+     * instead of proxy cache like Symfony reverse proxy!
      *
-     * @param Partner $partner
+     * @Cache(
+     *     public=true,
+     *     maxage="httpCache.getTtlExpiration()",
+     *     lastModified="httpCache.getUpdateDate()",
+     *     etag="httpCache.getEtagToken()"
+     * )
+     *
+     * @param Partner   $partner
+     * @param HTTPCache $httpCache
+     *
+     * @ParamConverter("partner", converter="doctrine.cache.custom_converter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}"
-     * }, name="show_partner", methods={"GET"})
+     * }, defaults={"entityType"=Partner::class, "isCollection"=false}, name="show_partner", methods={"GET"})
      *
      * @throws \Exception
      */
-    public function showPartner(Partner $partner): JsonResponse
+    public function showPartner(Partner $partner, HTTPCache $httpCache): JsonResponse
     {
         // Find partner details
         // An admin has access to all existing partners (including himself) details with this permission!
@@ -83,10 +100,21 @@ class PartnerController extends AbstractController
             $partner,
             'json',
             $this->serializationContext->setGroups(['Default', 'Partner_detail'])
-            // Exclude Offer collection for a simple partner, since it is not expected in this case!
+            // IMPORTANT: Exclude Offer collection for a simple partner
+            // since it is not interesting/expected in this case!
         );
-        // Pass JSON data string to response
-        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
+        // Pass JSON data string to response and HTTP cache headers for reverse proxy cache
+        return $this->responseBuilder
+            ->createJson(
+                $data,
+                Response::HTTP_OK,
+                // Differentiate cached response
+                $this->responseBuilder->mergeHttpCacheCustomHeaders($httpCache),
+                true,
+                HTTPCache::PROXY_CACHE
+            )
+            // Cache response with expiration/validation strategy
+            ->setCache($this->responseBuilder->setHttpCacheStrategyHeaders($httpCache));
     }
 
     /**
@@ -94,6 +122,8 @@ class PartnerController extends AbstractController
      *
      * Please note that Symfony param converter is used here to retrieve a Partner entity.
      * A custom param converter could also ease email format check in this case.
+     * No cache is used here due to email attribute which could be treated as a particular case
+     * with API custom DoctrineCacheConverter and HTTPCacheConverter.
      *
      * @param Partner $partner
      *

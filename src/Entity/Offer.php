@@ -63,7 +63,7 @@ class Offer
     private $uuid;
 
     /**
-     * @var Partner
+     * @var Partner|null
      *
      * @ORM\ManyToOne(targetEntity=Partner::class, inversedBy="offers")
      * @ORM\JoinColumn(name="partner_uuid", referencedColumnName="uuid")
@@ -73,7 +73,7 @@ class Offer
     private $partner;
 
     /**
-     * @var Phone
+     * @var Phone|null
      *
      * @ORM\ManyToOne(targetEntity=Phone::class, inversedBy="offers")
      * @ORM\JoinColumn(name="phone_uuid", referencedColumnName="uuid")

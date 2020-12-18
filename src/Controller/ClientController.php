@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Client;
+use App\Entity\HTTPCache;
 use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
@@ -12,12 +13,15 @@ use App\Services\API\Security\ClientVoter;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * Class ClientController
@@ -57,22 +61,38 @@ class ClientController extends AbstractController
      * List all associated clients for a particular authorized partner
      * with (Doctrine paginated results) or without pagination.
      *
+     * Please note that Symfony custom param converter is used here
+     * to retrieve a HTTPCache strategy entity.
+     * "Cache" Annotation below is more useful when private cache (e.g. the browser directly) is used
+     * instead of proxy cache like Symfony reverse proxy!
+     *
+     * @Cache(
+     *     public=true,
+     *     maxage="httpCache.getTtlExpiration()",
+     *     lastModified="httpCache.getUpdateDate()",
+     *     etag="httpCache.getEtagToken()"
+     * )
+     *
      * @param FilterRequestHandler  $requestHandler
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
+     *
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/clients"
-     * }, name="list_clients", methods={"GET"})
+     * }, defaults={"isCollection"=true}, name="list_clients", methods={"GET"})
      *
      * @throws \Exception
      */
     public function listClients(
         FilterRequestHandler $requestHandler,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $isFullListRequested = $requestHandler->isFullListRequested($request);
@@ -88,8 +108,7 @@ class ClientController extends AbstractController
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
             $clients,
-            Client::class,
-            $paginationData
+            Client::class
         );
         // Filter results with serialization rules (look at Client entity)
         $data = $this->serializer->serialize(
@@ -97,29 +116,52 @@ class ClientController extends AbstractController
             'json',
             $this->serializationContext->setGroups(['Default', 'Client_list'])
         );
-        // Pass JSON data string to response
-        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
+        // Pass JSON data string to response and HTTP cache headers for reverse proxy cache
+        return $this->responseBuilder
+            ->createJson(
+                $data,
+                Response::HTTP_OK,
+                // Differentiate cached response
+                $this->responseBuilder->mergeHttpCacheCustomHeaders($httpCache),
+                true,
+                HTTPCache::PROXY_CACHE
+            )
+            // Cache response with expiration/validation strategy
+            ->setCache($this->responseBuilder->setHttpCacheStrategyHeaders($httpCache));
     }
 
     /**
      * Show details about a particular client.
      *
-     * Please note that Symfony param converter is used here to retrieve a Client entity.
+     * Please note that Symfony custom param converters are used here
+     * to retrieve a Client resource entity and HTTPCache strategy entity.
+     * "Cache" Annotation below is more useful when private cache (e.g. the browser directly) is used
+     * instead of proxy cache like Symfony reverse proxy!
      *
-     * @param Client  $client
+     * @Cache(
+     *     public=true,
+     *     maxage="httpCache.getTtlExpiration()",
+     *     lastModified="httpCache.getUpdateDate()",
+     *     etag="httpCache.getEtagToken()"
+     * )
+     *
+     * @param Client    $client
+     * @param HTTPCache $httpCache
+     *
+     * @ParamConverter("client", converter="doctrine.cache.custom_converter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/clients/{uuid<[\w-]{36}>}"
-     * }, name="show_client", methods={"GET"})
+     * }, defaults={"entityType"=Client::class, "isCollection"=false}, name="show_client", methods={"GET"})
      *
      * @throws \Exception
      */
-    public function showClient(Client $client): JsonResponse
+    public function showClient(Client $client, HTTPCache $httpCache): JsonResponse
     {
-        // Find partner client details
-        // An admin has access to all existing clients details with this permission!
+        // Check view permission (Requested client must be associated to authenticated partner.)
         $this->denyAccessUnlessGranted(
             ClientVoter::CAN_VIEW,
             $client,
@@ -131,8 +173,18 @@ class ClientController extends AbstractController
             'json',
             $this->serializationContext->setGroups(['Default', 'Client_detail'])
         );
-        // Pass JSON data string to response
-        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
+        // Pass JSON data string to response and HTTP cache headers for reverse proxy cache
+        return $this->responseBuilder
+            ->createJson(
+                $data,
+                Response::HTTP_OK,
+                // Differentiate cached response
+                $this->responseBuilder->mergeHttpCacheCustomHeaders($httpCache),
+                true,
+                HTTPCache::PROXY_CACHE
+            )
+            // Cache response with expiration/validation strategy
+            ->setCache($this->responseBuilder->setHttpCacheStrategyHeaders($httpCache));
     }
 
     /**
@@ -192,6 +244,8 @@ class ClientController extends AbstractController
      *
      * @param Client $client
      *
+     * @ParamConverter("client", converter="doctrine.orm")
+     *
      * @return Response
      *
      * @Route({
@@ -202,26 +256,44 @@ class ClientController extends AbstractController
      */
     public function deleteClient(Client $client): Response
     {
-        // An admin has access to all existing clients details with this permission!
+        // Check deletion permission (Requested client must be associated to authenticated partner.)
         $this->denyAccessUnlessGranted(
             ClientVoter::CAN_DELETE,
             $client,
             'Client resource deletion action not allowed'
         );
-        // An admin has access to all existing clients details with this role!
-        $partner = $client->getPartner();
-        // A simple partner can only delete his clients!
-        if (!$this->isGranted(Partner::API_ADMIN_ROLE)) {
-            // Get authenticated partner to match client to remove and save deletion
-            /** @var Partner $partner */
-            $partner = $this->getUser();
+        // Get authenticated partner to match client to remove and save deletion
+        /** @var Partner $authenticatedPartner */
+        $authenticatedPartner = $this->getUser();
+        // Particular case: remove client depending on partner owner if authenticated partner has admin role!
+        if ($this->isGranted(Partner::API_ADMIN_ROLE)) {
+            // Possibly use a fake authenticated partner if admin is not the client owner!
+            $authenticatedPartner = $this->getClientAssociatedPartnerOwner($authenticatedPartner, $client);
         }
-        $partner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
+        $authenticatedPartner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
         $this->getDoctrine()->getManager()->flush();
         // Return a simple response without data!
         return $this->responseBuilder->create(
             null,
             Response::HTTP_NO_CONTENT
         );
+    }
+
+    /**
+     * Get Client entity corresponding (associated) Partner owner.
+     *
+     * @param Partner $authenticatedPartner
+     * @param Client  $client
+     *
+     * @return Partner|UserInterface
+     */
+    private function getClientAssociatedPartnerOwner(Partner $authenticatedPartner, Client $client): Partner
+    {
+        $authenticatedPartnerUuid = $authenticatedPartner->getUuid();
+        $clientPartnerUuid = $client->getPartner()->getUuid();
+        if ($authenticatedPartnerUuid->toString() !== $clientPartnerUuid->toString()) {
+            return $client->getPartner();
+        }
+        return $authenticatedPartner;
     }
 }

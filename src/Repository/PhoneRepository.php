@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Phone;
-use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
  * Class PhoneRepository
@@ -18,11 +18,12 @@ class PhoneRepository extends AbstractAPIRepository
     /**
      * PhoneRepository constructor.
      *
-     * @param ManagerRegistry $registry
+     * @param ManagerRegistry        $registry
+     * @param TagAwareCacheInterface $doctrineCache
      */
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, TagAwareCacheInterface $doctrineCache)
     {
-        parent::__construct($registry, Phone::class);
+        parent::__construct($registry, $doctrineCache, Phone::class);
     }
 
     /**
@@ -32,7 +33,9 @@ class PhoneRepository extends AbstractAPIRepository
      * @param string     $partnerUuid
      * @param array|null $paginationData
      *
-     * @return \IteratorAggregate|Paginator
+     * @return \IteratorAggregate
+     *
+     * @throws \Psr\Cache\InvalidArgumentException
      */
     public function findListByPartner(string $partnerUuid, ?array $paginationData): \IteratorAggregate
     {
@@ -41,11 +44,7 @@ class PhoneRepository extends AbstractAPIRepository
             ->leftJoin('off.partner', 'par', 'WITH', 'off.partner = par.uuid')
             ->where('par.uuid = ?1')
             ->setParameter(1, $partnerUuid);
-        // Get results with a pagination
-        if (!\is_null($paginationData)) {
-            return $this->filterWithPagination($queryBuilder, $paginationData['page'], $paginationData['per_page']);
-        }
-        // Get all results as \IteratorAggregate Doctrine Paginator implementation
-        return new Paginator($queryBuilder->setFirstResult(0)->getQuery());
+        // Get results with or without pagination
+        return $this->findList($partnerUuid, $queryBuilder, $paginationData);
     }
 }

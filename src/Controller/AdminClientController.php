@@ -5,18 +5,21 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Client;
+use App\Entity\HTTPCache;
 use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -61,20 +64,32 @@ class AdminClientController extends AbstractController
      * List all associated clients for a particular partner
      * with (Doctrine paginated results) or without pagination.
      *
-     * Please note that Symfony param converter is used here to retrieve a Partner entity.
+     * Please note that Symfony custom param converters are used here
+     * to retrieve a Partner resource entity and HTTPCache strategy entity.
+     * "Cache" Annotation below is more useful when private cache (e.g. the browser directly) is used
+     * instead of proxy cache like Symfony reverse proxy!
+     *
+     * @Cache(
+     *     public=true,
+     *     maxage="httpCache.getTtlExpiration()",
+     *     lastModified="httpCache.getUpdateDate()",
+     *     etag="httpCache.getEtagToken()"
+     * )
      *
      * @param FilterRequestHandler  $requestHandler
      * @param Partner               $partner
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
+     * @param HTTPCache             $httpCache
      *
-     * @ParamConverter("partner", options={"mapping": {"uuid": "uuid"}})
+     * @ParamConverter("partner", converter="doctrine.cache.custom_converter")
+     * @ParamConverter("httpCache", converter="http.cache.custom_converter")
      *
      * @return JsonResponse
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}/clients"
-     * }, name="list_clients_per_partner", methods={"GET"})
+     * }, defaults={"entityType"=Partner::class, "isCollection"=true}, name="list_clients_per_partner", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -82,7 +97,8 @@ class AdminClientController extends AbstractController
         FilterRequestHandler $requestHandler,
         Partner $partner,
         RepresentationBuilder $representationBuilder,
-        Request $request
+        Request $request,
+        HTTPCache $httpCache
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $clientRepository = $this->getDoctrine()->getRepository(Client::class);
@@ -95,8 +111,7 @@ class AdminClientController extends AbstractController
         $paginatedCollection = $representationBuilder->createPaginatedCollection(
             $request,
             $clients,
-            Client::class,
-            $paginationData
+            Client::class
         );
         // Filter results with serialization rules (look at Client entity)
         $data = $this->serializer->serialize(
@@ -104,8 +119,18 @@ class AdminClientController extends AbstractController
             'json',
            $this->serializationContext->setGroups(['Default', 'Client_list'])
         );
-        // Pass JSON data string to response
-        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
+        // Pass JSON data string to response and HTTP cache headers for reverse proxy cache
+        return $this->responseBuilder
+            ->createJson(
+                $data,
+                Response::HTTP_OK,
+                // Differentiate cached response
+                $this->responseBuilder->mergeHttpCacheCustomHeaders($httpCache),
+                true,
+                HTTPCache::PROXY_CACHE
+            )
+            // Cache response with expiration/validation strategy
+            ->setCache($this->responseBuilder->setHttpCacheStrategyHeaders($httpCache));
     }
 
     /**
@@ -156,6 +181,42 @@ class AdminClientController extends AbstractController
                 )
             ],
             false
+        );
+    }
+
+    /**
+     * Delete a particular client associated to a particular requested partner "seller".
+     * An administrator can delete any client for every partners.
+     *
+     * Please note that Symfony param converter is used here to retrieve a Partner and Client entity.
+     *
+     * @param Partner $partner
+     * @param Client  $client
+     *
+     * @ParamConverter("partner", options={"mapping": {"pUuid": "uuid"}})
+     * @ParamConverter("client", options={"mapping": {"cUuid": "uuid"}})
+     *
+     * @return Response
+     *
+     * @Route({
+     *     "en": "partners/{pUuid<[\w-]{36}>}/clients/{cUuid<[\w-]{36}>}"
+     * }, name="delete_partner_client", methods={"DELETE"})
+     *
+     * @throws \Exception
+     */
+    public function deletePartnerClient(Partner $partner, Client $client): Response
+    {
+        // Check coherent pair of associated entities
+        if (!$partner->getClients()->contains($client)) {
+            throw new BadRequestHttpException('Selected Client to remove not associated to chosen Partner');
+        }
+        // Get partner to match client to remove and save deletion
+        $partner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
+        $this->getDoctrine()->getManager()->flush();
+        // Return a simple response without data!
+        return $this->responseBuilder->create(
+            null,
+            Response::HTTP_NO_CONTENT
         );
     }
 }

@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\Offer;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
  * Class OfferRepository
@@ -18,11 +19,12 @@ class OfferRepository extends AbstractAPIRepository
     /**
      * OfferRepository constructor.
      *
-     * @param ManagerRegistry $registry
+     * @param ManagerRegistry        $registry
+     * @param TagAwareCacheInterface $doctrineCache
      */
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, TagAwareCacheInterface $doctrineCache)
     {
-        parent::__construct($registry, Offer::class);
+        parent::__construct($registry, $doctrineCache, Offer::class);
     }
 
     /**
@@ -32,7 +34,9 @@ class OfferRepository extends AbstractAPIRepository
      * @param string     $partnerUuid
      * @param array|null $paginationData
      *
-     * @return \IteratorAggregate|Paginator
+     * @return \IteratorAggregate
+     *
+     * @throws \Psr\Cache\InvalidArgumentException
      */
     public function findListByPartner(string $partnerUuid, ?array $paginationData): \IteratorAggregate
     {
@@ -40,34 +44,29 @@ class OfferRepository extends AbstractAPIRepository
             ->leftJoin('off.partner', 'par', 'WITH', 'par.uuid = off.partner')
             ->where('par.uuid = ?1')
             ->setParameter(1, $partnerUuid);
-        // Get results with a pagination
-        if (!\is_null($paginationData)) {
-            return $this->filterWithPagination($queryBuilder, $paginationData['page'], $paginationData['per_page']);
-        }
-        // Get all results as \IteratorAggregate Doctrine Paginator implementation
-        return new Paginator($queryBuilder->setFirstResult(0)->getQuery());
+        // Get results with or without pagination
+        return $this->findList($partnerUuid, $queryBuilder, $paginationData);
     }
 
     /**
      * Find a set of Offer entities results depending on a particular phone uuid parameter,
      * with possible paginated results.
      *
+     * @param string     $partnerUuid
      * @param string     $phoneUuid
      * @param array|null $paginationData
      *
      * @return \IteratorAggregate|Paginator
+     *
+     * @throws \Psr\Cache\InvalidArgumentException
      */
-    public function findListByPhone(string $phoneUuid, ?array $paginationData): \IteratorAggregate
+    public function findListByPhone(string $partnerUuid, string $phoneUuid, ?array $paginationData): \IteratorAggregate
     {
         $queryBuilder = $this->createQueryBuilder('off')
             ->leftJoin('off.phone', 'pho', 'WITH', 'pho.uuid = off.phone')
             ->where('pho.uuid = ?1')
             ->setParameter(1, $phoneUuid);
-        // Get results with a pagination
-        if (!\is_null($paginationData)) {
-            return $this->filterWithPagination($queryBuilder, $paginationData['page'], $paginationData['per_page']);
-        }
-        // Get all results as \IteratorAggregate Doctrine Paginator implementation
-        return new Paginator($queryBuilder->setFirstResult(0)->getQuery());
+        // Get all results (by default) with or without pagination
+        return $this->findList($partnerUuid, $queryBuilder, $paginationData);
     }
 }

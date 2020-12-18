@@ -67,7 +67,7 @@ class Phone
     private $uuid;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -76,7 +76,7 @@ class Phone
     private $type;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -85,7 +85,7 @@ class Phone
     private $brand;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=45, unique=true)
      *
@@ -94,7 +94,7 @@ class Phone
     private $model;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -103,7 +103,7 @@ class Phone
     private $color;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="text")
      *
@@ -112,7 +112,7 @@ class Phone
     private $description;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="decimal", precision=6, scale=2)
      *

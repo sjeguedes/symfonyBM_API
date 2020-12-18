@@ -86,7 +86,7 @@ class Client
     private $uuid;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -95,7 +95,7 @@ class Client
     private $type;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -104,7 +104,7 @@ class Client
     private $name;
 
     /**
-     * @var string
+     * @var string|null
      *
      * @ORM\Column(type="string", length=320, unique=true)
      *
@@ -113,7 +113,7 @@ class Client
     private $email;
 
     /**
-     * @var Partner
+     * @var Partner|null
      *
      * @ORM\ManyToOne(targetEntity=Partner::class, cascade={"persist"}, inversedBy="clients")
      * @ORM\JoinColumn(name="partner_uuid", referencedColumnName="uuid", nullable=false)
@@ -249,19 +249,19 @@ class Client
     }
 
     /**
-     * @return Partner
+     * @return Partner|null
      */
-    public function getPartner(): Partner
+    public function getPartner(): ?Partner
     {
         return $this->partner;
     }
 
     /**
-     * @param Partner $partner
+     * @param Partner|null $partner
      *
      * @return $this
      */
-    public function setPartner(Partner $partner): self
+    public function setPartner(?Partner $partner): self
     {
         $this->partner = $partner;
 

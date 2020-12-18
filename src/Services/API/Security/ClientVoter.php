@@ -103,8 +103,10 @@ class ClientVoter extends Voter
     {
         // Check simple partner
         if (!$this->securityChecker->isGranted(Partner::API_ADMIN_ROLE)) {
-            // Check partner and client relation with extra lazy fetch
-            if (!$authenticatedPartner->getClients()->contains($client)) {
+            // Check if client associated partner and authenticated partner are not the same!
+            $authenticatedPartnerUuid = $authenticatedPartner->getUuid();
+            $clientPartnerUuid = $client->getPartner()->getUuid();
+            if ($clientPartnerUuid->toString() !== $authenticatedPartnerUuid->toString()) {
                 // Will return a custom error response managed thanks to kernel exception listener
                 return false;
             }
