@@ -18,7 +18,6 @@ use Lexik\Bundle\JWTAuthenticationBundle\TokenExtractor\AuthorizationHeaderToken
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 /**
@@ -77,21 +76,18 @@ final class HTTPCacheConverter implements ParamConverterInterface
         $routeName = $request->get('_route');
         $entityAttributeName = $configuration->getName();
         // No result was found, so create a HTTPCache instance which corresponds to this request!
-        // TODO: this is a wrong approach since authorization is not called at this level!
-        // TODO: move HTTPCache instance persistence in ResponseBuilder method to be sure it is useful to get a new one!
         if (\is_null($result = $this->queryHTTPCache($requestURI, $authenticatedPartner))) {
             // Get Necessary Data
             $type = $isCollection ? HTTPCache::RESOURCE_TYPES['list'] : HTTPCache::RESOURCE_TYPES['unique'];
             preg_match('/\\\(\w+)$/', $request->get('entityType'), $matches);
             $classShortName = $matches[1];
+            // This new instance will be saved later thanks to ResponseBuilder instance once this request is allowed!
             $result = (new HTTPCache())
                 ->setPartner($authenticatedPartner)
                 ->setRouteName($routeName)
                 ->setRequestURI($requestURI)
                 ->setType($type)
                 ->setClassShortName($classShortName);
-            $this->entityManager->persist($result);
-            $this->entityManager->flush();
         }
         // Set requested http cache attribute $configuration->getName() with corresponding hydrated entity instance
         $request->attributes->set($entityAttributeName, $result);
@@ -113,7 +109,7 @@ final class HTTPCacheConverter implements ParamConverterInterface
         // Get JWT
         $token = $this->tokenExtractor->extract($request);
         if (!$token) {
-            throw new AccessDeniedHttpException('No Authorization Bearer Token found');
+            throw new UnauthorizedHttpException('No Authorization Bearer Token found');
         }
         // Get authenticated Partner with uuid from JWT payload (cache also the query thanks to DQL)
         try {
@@ -123,10 +119,7 @@ final class HTTPCacheConverter implements ParamConverterInterface
             /** @var Partner|JWTUser $partner */
             // TODO: use query builder in repository class to cache query!
             if (\is_null($partner = $partnerRepository->find($data['uuid']))) {
-                throw new UserNotFoundException(
-                    'email',
-                    $data['email']
-                );
+                throw new UserNotFoundException('email', $data['email']);
             }
         } catch (JWTDecodeFailureException $exception) {
             throw new UnauthorizedHttpException('Invalid JWT Token');
@@ -149,7 +142,7 @@ final class HTTPCacheConverter implements ParamConverterInterface
         $isEntityUuid = preg_match('/\/([\w-]{36})(\?[\w-&=]+)?$/', $request->getRequestUri(), $matches);
         // Check correct config for single entity (Client, Partner, Phone, Offer) instance GET request
         if (\is_null($isCollection) || !$isCollection && !$isEntityUuid) {
-            throw new RuntimeException('Request "isCollection" attribute null or wrong value');
+            throw new RuntimeException('Request "isCollection" attribute null, or defined with a wrong value');
         }
         return $isCollection;
     }

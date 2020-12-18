@@ -10,6 +10,7 @@ use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Security\PartnerVoter;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -59,7 +60,17 @@ class PartnerController extends AbstractController
     /**
      * Show details about a particular partner.
      *
-     * Please note that Symfony param converter is used here to retrieve a Partner entity.
+     * Please note that Symfony custom param converters are used here
+     * to retrieve a Partner resource entity and HTTPCache strategy entity.
+     * "Cache" Annotation below is more useful when private cache (e.g. the browser directly) is used
+     * instead of proxy cache like Symfony reverse proxy!
+     *
+     * @Cache(
+     *     public=true,
+     *     maxage="httpCache.getTtlExpiration()",
+     *     lastModified="httpCache.getUpdateDate()",
+     *     etag="httpCache.getEtagToken()"
+     * )
      *
      * @param Partner   $partner
      * @param HTTPCache $httpCache
@@ -89,10 +100,21 @@ class PartnerController extends AbstractController
             $partner,
             'json',
             $this->serializationContext->setGroups(['Default', 'Partner_detail'])
-            // Exclude Offer collection for a simple partner, since it is not expected in this case!
+            // IMPORTANT: Exclude Offer collection for a simple partner
+            // since it is not interesting/expected in this case!
         );
-        // Pass JSON data string to response
-        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
+        // Pass JSON data string to response and HTTP cache headers for reverse proxy cache
+        return $this->responseBuilder
+            ->createJson(
+                $data,
+                Response::HTTP_OK,
+                // Differentiate cached response
+                $this->responseBuilder->mergeHttpCacheCustomHeaders($httpCache),
+                true,
+                HTTPCache::PROXY_CACHE
+            )
+            // Cache response with expiration/validation strategy
+            ->setCache($this->responseBuilder->setHttpCacheStrategyHeaders($httpCache));
     }
 
     /**

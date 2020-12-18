@@ -23,10 +23,11 @@ use Ramsey\Uuid\UuidInterface;
 class HTTPCache
 {
     /**
-     * Define a collection route name prefix
-     * which must be present in string to unify search.
+     * Define which kind of HTTP cache is used for a particular response.
      */
-    const LIST_ROUTE_NAME_PREFIX = 'list_';
+    const NONE = 0;
+    const PROXY_CACHE = 1;
+    const PRIVATE_CACHE = 2;
 
     /**
      * Define a resource distinction.
@@ -137,6 +138,59 @@ class HTTPCache
         return md5(
             uniqId($this->uuid->toString() . $updateDate->getTimestamp())
         );
+    }
+
+    /**
+     * Generate an expiration date.
+     *
+     * @return \DateTimeInterface
+     *
+     * @see Response::setExpires() method
+     *
+     * @throws \Exception
+     */
+    public function generateExpirationDate(): \DateTimeInterface
+    {
+        return new \DateTime("+{$this->ttlExpiration} seconds");
+    }
+
+    /**
+     * Generate a compatible datetime for "strtotime" php function.
+     *
+     * @return \DateTimeInterface
+     *
+     * @see https://www.php.net/manual/en/function.strtotime.php
+     *
+     * @throws \Exception
+     */
+    public function generateExpirationTime(): string
+    {
+        return "+{$this->ttlExpiration} seconds";
+    }
+
+    /**
+     * Generate an array of options to be used in Response::setCache() method.
+     *
+     * @param bool $isSensioCacheUsed a Sensio framework bundle compatible token must be defined
+     *
+     * @return array
+     */
+    public function generateHeadersOptions($isSensioCacheUsed = true): array
+    {
+        // Format "Etag" as expected to also work with Sensio framework bundle cache annotation
+        !$isSensioCacheUsed ?: $this->setEtagTokenToCompareWithSensioCache($this->getEtagToken());
+        // Define options as expected in Response::setCache() method
+        $options = [
+            'etag'          => $this->getEtagToken(),
+            'last_modified' => $this->getUpdateDate(),
+            'max_age'       => $this->getTtlExpiration(),
+            'public'        => true, // By default if not precised
+        ];
+        // Check if null value(s) exist(s) to avoid issue
+        if (!empty($results = array_filter($options, function ($value) { return null === $value; }))) {
+            throw new \RuntimeException('HTTP cache Header(s) "null" value(s) found');
+        }
+        return $options;
     }
 
     /**
@@ -261,9 +315,7 @@ class HTTPCache
      */
     public function getEtagToken(): ?string
     {
-        return md5(
-            uniqId($this->uuid->toString() . $this->updateDate->getTimestamp())
-        );
+        return $this->etagToken;
     }
 
     /**
@@ -273,7 +325,24 @@ class HTTPCache
      */
     public function setEtagToken(\DateTimeImmutable $updateDate): self
     {
-        $this->etagToken = $this->generateUniqueEtag($updateDate);
+        // Quotation marks are necessary to respect Etag format
+        $this->etagToken = $this->generateUniqueEtag($updateDate) . '"';
+
+        return $this;
+    }
+
+    /**
+     * set "Etag" header as expected for Sensio framework bundle when using "Cache" Annotation.
+     *
+     * @param string $etagToken
+     *
+     * @return $this
+     */
+    public function setEtagTokenToCompareWithSensioCache(string $etagToken): self
+    {
+        // Use hash() function to format token as it is in HTTPCacheListener
+        // to make Response:isNotModified() work.
+        $this->etagToken = hash('sha256', $etagToken);
 
         return $this;
     }

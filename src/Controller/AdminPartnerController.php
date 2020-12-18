@@ -11,6 +11,7 @@ use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -59,6 +60,18 @@ class AdminPartnerController extends AbstractController
     /**
      * List all available partners with (Doctrine paginated results) or without pagination.
      *
+     * Please note that Symfony custom param converters is used here
+     * to retrieve a HTTPCache strategy entity.
+     * "Cache" Annotation below is more useful when private cache (e.g. the browser directly) is used
+     * instead of proxy cache like Symfony reverse proxy!
+     *
+     * @Cache(
+     *     public=true,
+     *     maxage="httpCache.getTtlExpiration()",
+     *     lastModified="httpCache.getUpdateDate()",
+     *     etag="httpCache.getEtagToken()"
+     * )
+     *
      * @param FilterRequestHandler  $requestHandler
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
@@ -101,7 +114,17 @@ class AdminPartnerController extends AbstractController
             'json',
             $this->serializationContext->setGroups(['Default', 'Partner_list'])
         );
-        // Pass JSON data string to response
-        return $this->responseBuilder->createJson($data, Response::HTTP_OK);
+        // Pass JSON data string to response and HTTP cache headers for reverse proxy cache
+        return $this->responseBuilder
+            ->createJson(
+                $data,
+                Response::HTTP_OK,
+                // Differentiate cached response
+                $this->responseBuilder->mergeHttpCacheCustomHeaders($httpCache),
+                true,
+                HTTPCache::PROXY_CACHE
+            )
+            // Cache response with expiration/validation strategy
+            ->setCache($this->responseBuilder->setHttpCacheStrategyHeaders($httpCache));
     }
 }
