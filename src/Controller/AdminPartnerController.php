@@ -11,6 +11,8 @@ use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Nelmio\ApiDocBundle\Annotation as ApiDoc;
+use OpenApi\Annotations as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
@@ -24,6 +26,12 @@ use Symfony\Component\Routing\Annotation\Route;
  * Class AdminPartnerController
  *
  * Manage all requests made by authenticated administrator (special partner account) about API partner data management.
+ *
+ * @OA\Tag(name="Administrator requests on registered partner(s)")
+ *
+ * @Route({
+ *     "en": "/admin"
+ * })
  *
  * @Security("is_granted('ROLE_API_ADMIN')")
  */

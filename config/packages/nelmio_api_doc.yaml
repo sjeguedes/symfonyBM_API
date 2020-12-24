@@ -1,0 +1,90 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: BileMo API
+            description: Phone store for our partners!
+            version: 1.0.0
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    #name: Authorization
+                    scheme: bearer
+                    bearerFormat: JWT
+        security:
+            - Bearer: []
+        servers:
+            - url: '%api_doc_server_url%'
+              description: API version 1.0.0 server access
+    # Filter documented areas
+    areas:
+        default: # for partner (default or consumer)
+            path_patterns: &default_path_patterns
+                # Accepts routes not under /api/v1/specification/{area} or /api/v1/{area}
+                # or /api/v1/default or /api/v1/consumer
+                # which contain "doc" optionally.
+                - ^/api/v\d+/(?!(admin|(specification/)?\{[\w-]+\}|default|consumer)(/doc$)?)
+                - ^/api/v\d+/specification/(default|consumer)-doc.json # list also path to JSON file
+                - ^/api/v\d+/login/check # list login check
+            documentation:
+                tags: &default_documentation_tags # tags sort order (sections) and selection for this area
+                    - name: OpenAPI Documentation
+                      description: API current specification JSON file
+                    - name: Login - Authentication
+                      description: API security process
+                    - name: Partner requests to manage his own data
+                      description: API authenticated partner data
+                    - name: Partner requests to manage his own client(s)
+                      description: API authenticated partner associated client(s) data
+                    - name: Partner requests to manage his own phone(s) or catalog
+                      description: API authenticated partner associated phones(s) or all available references data
+                paths:
+                    '/%api_and_version_path_prefix%/specification/default-doc.json': # add default spec. for json file
+                        get: &default_path_documentation_spec
+                            summary: Get OpenAPI current JSON file.
+                            tags:
+                                - OpenAPI Documentation
+                            security: [] # No security
+                            responses:
+                                '200': # Response
+                                    description: OK
+                                    content: # Response body
+                                        application/json: # https://swagger.io/docs/specification/media-types
+
+        consumer: # for consumer: import default configuration to use "consumer" area name
+            path_patterns: *default_path_patterns
+            documentation:
+                tags: *default_documentation_tags
+                paths:
+                    '/%api_and_version_path_prefix%/specification/consumer-doc.json': # add spec. for json file
+                        get: *default_path_documentation_spec
+
+        administrator: # for admin
+            path_patterns:
+                # Accepts routes under /api/v1/admin
+                # and not under /api/v1/ which contain "doc" optionally.
+                - ^/api/v\d+/admin # list paths prefixed with admin: /api/v1/admin
+                - ^/api/v\d+/(?!(\{[\w-]+\}|[\w-]+)(/doc$)?)
+                - ^/api/v\d+/specification/administrator-doc.json # list also path to JSON file
+                - ^/api/v\d+/login/check # list login check
+            documentation:
+                tags: # tags sort order (sections) and selection for this area
+                    - name: OpenAPI Documentation
+                      description: API specification JSON file
+                    - name: Login - Authentication
+                      description: API security process
+                    - name: Administrator requests on registered partner(s)
+                      description: API Admin requests (Partner with extended permissions)
+                                   to manage all consumers (as Partner) data
+                    - name: Administrator requests on partner client(s)
+                      description: API Admin requests (Partner with extended permissions)
+                                   to manage selected partner client(s)
+                    - name: Administrator requests on offer(s)
+                      description: API Admin requests (Partner with extended permissions)
+                                   to manage offer(s) with different approaches
+                    - name: Administrator requests on partner phone(s)
+                      description: API Admin requests (Partner with extended permissions)
+                                   to manage partner phone(s)
+                paths:
+                    '/%api_and_version_path_prefix%/specification/administrator-doc.json': # add spec. for json file
+                        get: *default_path_documentation_spec

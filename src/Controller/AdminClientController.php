@@ -12,6 +12,8 @@ use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Nelmio\ApiDocBundle\Annotation as ApiDoc;
+use OpenApi\Annotations as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
@@ -27,6 +29,12 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * Class AdminClientController
  *
  * Manage all requests made by authenticated administrator (special partner account) about API client data management.
+ *
+ * @OA\Tag(name="Administrator requests on partner client(s)")
+ *
+ * @Route({
+ *     "en": "/admin"
+ * })
  *
  * @Security("is_granted('ROLE_API_ADMIN')")
  */
@@ -146,7 +154,7 @@ class AdminClientController extends AbstractController
      * @return JsonResponse
      *
      * @Route({
-     *     "en": "partners/{uuid<[\w-]{36}>}/clients"
+     *     "en": "/partners/{uuid<[\w-]{36}>}/clients"
      * }, name="create_partner_client", methods={"POST"})
      *
      * @throws \Exception
@@ -199,7 +207,7 @@ class AdminClientController extends AbstractController
      * @return Response
      *
      * @Route({
-     *     "en": "partners/{pUuid<[\w-]{36}>}/clients/{cUuid<[\w-]{36}>}"
+     *     "en": "/partners/{pUuid<[\w-]{36}>}/clients/{cUuid<[\w-]{36}>}"
      * }, name="delete_partner_client", methods={"DELETE"})
      *
      * @throws \Exception

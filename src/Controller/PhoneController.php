@@ -11,6 +11,8 @@ use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Nelmio\ApiDocBundle\Annotation as ApiDoc;
+use OpenApi\Annotations as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,6 +25,8 @@ use Symfony\Component\Routing\Annotation\Route;
  * Class PhoneController
  *
  * Manage all requests from a simple partner user (consumer) about his selected phones data.
+ *
+ * @OA\Tag(name="Partner requests to manage his own phone(s) or catalog")
  */
 class PhoneController extends AbstractController
 {
@@ -54,9 +58,10 @@ class PhoneController extends AbstractController
     }
 
     /**
-     * List all available phones for a particular authenticated partner
-     * or all the referenced products (catalog filter or when request is made by an admin)
+     * List all available phones for a particular authenticated partner or entire catalog
      * with (Doctrine paginated results) or without pagination.
+     *
+     * All the referenced products can also be listed thanks to catalog filter.
      *
      * Please note that Symfony custom param converter is used here
      * to retrieve a HTTPCache strategy entity.

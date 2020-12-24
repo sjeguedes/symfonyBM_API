@@ -13,6 +13,8 @@ use App\Services\API\Security\ClientVoter;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Nelmio\ApiDocBundle\Annotation as ApiDoc;
+use OpenApi\Annotations as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,6 +29,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
  * Class ClientController
  *
  * Manage all requests from simple partner user (consumer) about his clients data.
+ *
+ * @OA\Tag(name="Partner requests to manage his own client(s)")
  */
 class ClientController extends AbstractController
 {

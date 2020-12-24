@@ -5,6 +5,8 @@
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
     api_and_version_path_prefix: 'api/v1'
+    api_doc_server_url: '%env(API_DOC_SERVER_URL)%'
+    api_doc_server_url_with_prefix: '%api_doc_server_url%/%api_and_version_path_prefix%'
     api_doctrine_cache_directory_path: '%kernel.cache_dir%/doctrine/app_cache'
 
 services:

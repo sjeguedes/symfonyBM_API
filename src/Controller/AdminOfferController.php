@@ -13,6 +13,8 @@ use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Nelmio\ApiDocBundle\Annotation as ApiDoc;
+use OpenApi\Annotations as OA;
 use Ramsey\Uuid\UuidInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
@@ -27,6 +29,12 @@ use Symfony\Component\Routing\Annotation\Route;
  * Class AdminOfferController
  *
  * Manage all requests made by authenticated administrator (special partner account) about API offer data management.
+ *
+ * @OA\Tag(name="Administrator requests on offer(s)")
+ *
+ * @Route({
+ *     "en": "/admin"
+ * })
  *
  * @Security("is_granted('ROLE_API_ADMIN')")
  */

@@ -10,6 +10,8 @@ use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Security\PartnerVoter;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
+use Nelmio\ApiDocBundle\Annotation as ApiDoc;
+use OpenApi\Annotations as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,6 +25,8 @@ use Symfony\Component\Routing\Annotation\Route;
  * Manage all requests made by a partner user (consumer) about his own data.
  *
  * Please note that an administrator can access any partner data.
+ *
+ * @OA\Tag(name="Partner requests to manage his own data")
  *
  * @see https://symfony.com/doc/current/controller/forwarding.html
  * @see https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html#creating-a-converter
