@@ -33,11 +33,11 @@ class PhoneRepository extends AbstractAPIRepository
      * @param string     $partnerUuid
      * @param array|null $paginationData
      *
-     * @return \IteratorAggregate
+     * @return \IteratorAggregate|null
      *
      * @throws \Psr\Cache\InvalidArgumentException
      */
-    public function findListByPartner(string $partnerUuid, ?array $paginationData): \IteratorAggregate
+    public function findListByPartner(string $partnerUuid, ?array $paginationData): ?\IteratorAggregate
     {
         $queryBuilder =$this->createQueryBuilder('pho')
             ->leftJoin('pho.offers', 'off','WITH', 'pho.uuid = off.phone')

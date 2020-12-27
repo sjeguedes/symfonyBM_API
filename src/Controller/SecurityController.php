@@ -36,30 +36,29 @@ class SecurityController extends AbstractController
      *                   @OA\Property(property="email", type="string"),
      *                   @OA\Property(property="password", type="string")
      *              },
-     *              example={"email"="name@domain.tld", "password"="my_super_pass1"}
+     *              example={"email"="prestataire-359f@marques-sasu.fr", "password"="pass_11"}
+     *          )
+     *      )
+     * )
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Get a JWT on successful operation",
+     *     @OA\JsonContent(
+     *          @OA\Property(
+     *              property="token",
+     *              type="string",
+     *              example="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE2MDkwNjY2OTIsImV4cCI6MTYwOTA3MDI5Miwicm9sZXMiOlsiUk9MRV9BUElfQ09OU1VNRVIiLCJST0xFX0FQSV9BRE1JTiJdLCJlbWFpbCI6InByZXN0YXRhaXJlLTM1OWZAbWFycXVlcy1zYXN1LmZyIiwidXVpZCI6Ijk4ZjMzMWQyLTE4ZWItNGU5MS04MTU5LTBiYzJkYzVmMTVjMiJ9.fEZi5sVOmFEvaXVJrBsYQ2GBvjZKkdaYekMPsKt4NROtk_EUfx12kBG5UsDYc-k333T4hgEpoY5OWT2so_GFEQOQ3m1M1KMHVsOSyBtLJKIRmTjSICq1H01hdb-D9m6qg6-ognsjIBrjVZv0SOLWcB9VvxBZJiBwoaYz-HZ6sJESIijlo9qu6s30iXiX50nP-ILbKGFKP2XD7a1JikGTyWs2akgN34uEL7jvVtGgQ_sgKLkXw8kAON4c69LJtPByrGH7cMWf-CdcyVjzmB7nKGGV8rJ55wGMg75neLpoFJj2HyL6qf3SHvNQ2Iqhcif-QZLvh7OgWnmt55GWUqsXwr1ehLgevrGWBG0UQfIhXOItyRCpne2uHMHYiDU4zm7cyRqY5H8gilO_z45JC0XXoZyouZP0MDdowmtApJ9cDQ0PD5WSsct5uLs6ioaxzG8ULI3OB4W3BiGD3QBm7Oi8R9BfFKII_hhHJOJG04hhGIFHyfDkFT3X5Bwxck0_O7txOa1nU-S1aEGFIHzI-DK_4xfHGhYBzc0VBfjmjWBTnWlWfAYTre0JArSjGy-F04Q2O0lFgIrzOlbcAffVGSEGgqS3kn63bZ_SVmwXnndTPacs7EFXmlUgwxraZ-L5dX0cuRnSd_aAZWd1cKeGAxtAPAyp-Xvo3ZNXIxHz2JlnD9A"
      *          )
      *      )
      * )
      * @OA\Response(
-     *     response=200,
-     *     description="Get a JWT on successful operation",
-     *     @OA\MediaType(
-     *         mediaType="application/json"
-     *     )
-     * )
-     * @OA\Response(
      *     response=400,
-     *     description="Invalid request JSON string content",
-     *     @OA\MediaType(
-     *         mediaType="application/json"
-     *     )
+     *     ref="#/components/responses/jwt_bad_request"
      * )
      * @OA\Response(
      *     response=401,
-     *     description="Invalid account credentials",
-     *     @OA\MediaType(
-     *         mediaType="application/json"
-     *     )
+     *     ref="#/components/responses/jwt_unauthorized"
      * )
      *
      * @Route({

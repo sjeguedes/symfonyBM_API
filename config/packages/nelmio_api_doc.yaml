@@ -5,12 +5,155 @@ nelmio_api_doc:
             description: Phone store for our partners!
             version: 1.0.0
         components:
+            headers:
+                content_type:
+                    description: "Resource and HAL HATEOAS data: JSON format application/hal+json"
+                    schema:
+                        type: string
+                cache_control:
+                    description: "Resource cache expiration format with max-age, must/proxy-revalidate and public values"
+                    schema:
+                        type: string
+                etag:
+                    description: "Resource cache validation with custom token"
+                    schema:
+                        type: string
+                last_modified:
+                    description: "Resource cache validation with last date of update"
+                    schema:
+                        type: string
+                x_cache_id:
+                    description: "Resource cache uuid stored thanks to this custom header"
+                    schema:
+                        type: string
+                x_cache_ttl:
+                    description: "Resource cache expiration max-age value stored thanks to this custom header"
+                    schema:
+                        type: string
+                vary:
+                    description: "Resource cache differentiation with two keys: Authorization Bearer and X-App-Cache-Id headers"
+                    schema:
+                        type: string
+            responses:
+                jwt_bad_request:
+                    description: "Unexpected/malformed request body content JSON string"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_jwt_error_400"
+                bad_request:
+                    description: "Wrong path and/or query parameter(s) used, or unexpected/malformed JSON"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_error_400"
+                jwt_unauthorized:
+                    description: "Invalid credentials"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_jwt_error_401"
+                unauthorized:
+                    description: "Expired or not found JWT token"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_error_401"
+                forbidden:
+                    description: "Action not allowed depending on partner permissions"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_error_403"
+                not_found:
+                    description: "No corresponding URI found"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_error_404"
+                internal:
+                    description: "Unexpected technical error"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_error_500"
             securitySchemes:
                 Bearer:
                     type: http
-                    #name: Authorization
                     scheme: bearer
                     bearerFormat: JWT
+            schemas:
+                api_jwt_error_400:
+                    description: "API JWT error 400 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 400
+                        message:
+                            type: string
+                            example: Bad request body content
+                api_error_400:
+                    description: "API error 400 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 400
+                        message:
+                            type: string
+                            example: Bad request
+                api_jwt_error_401:
+                    description: "API JWT error 401 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 401
+                        message:
+                            type: string
+                            example: Invalid account credentials
+                api_error_401:
+                    description: "API error 401 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 401
+                        message:
+                            type: string
+                            example: Invalid (or expired) JWT Token
+                api_error_403:
+                    description: "API error 403 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 403
+                        message:
+                            type: string
+                            example: Access denied
+                api_error_404:
+                    description: "API error 404 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 404
+                        message:
+                            type: string
+                            example: Request not found
+                api_error_500:
+                    description: "API error 500 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 500
+                        message:
+                            type: string
+                            example: Technical error
+
         security:
             - Bearer: []
         servers:
@@ -46,8 +189,8 @@ nelmio_api_doc:
                                 - OpenAPI Documentation
                             security: [] # No security
                             responses:
-                                '200': # Response
-                                    description: OK
+                                200: # Response
+                                    description: Get JSON specification data
                                     content: # Response body
                                         application/json: # https://swagger.io/docs/specification/media-types
 

@@ -9,6 +9,7 @@ use App\Entity\Offer;
 use App\Entity\Partner;
 use App\Entity\Phone;
 use App\Repository\AbstractAPIRepository;
+use App\Repository\PartnerRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ObjectRepository;
@@ -72,11 +73,12 @@ class DoctrineCacheConverter implements ParamConverterInterface
      * {@inheritdoc}
      *
      * @throws \Psr\Cache\InvalidArgumentException
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     public function apply(Request $request, ParamConverter $configuration): bool
     {
-        // Interrupt process if no uuid is requested (e.g controller forwarding)!
-        if (null === $request->get('uuid')) {
+        // Interrupt process if no uuid request attribute is found, or no special case matches!
+        if (null === $request->get('uuid') && !$this->setEntityUuidWithSpecialCase($request, $configuration)) {
             return false;
         }
         $entityAttributeName = $configuration->getName();
@@ -103,12 +105,6 @@ class DoctrineCacheConverter implements ParamConverterInterface
                 $rootAlias,
                 Uuid::fromString($parameters['uuid'])
             );
-
-            /*return $queryBuilder
-                ->andWhere($rootAlias . '.uuid = ?1')
-                ->getQuery()
-                ->setParameter(1, $parameters['uuid'])
-                ->getOneOrNullResult();*/
         });
         // Failure state: no result was found!
         if (\is_null($result)) {
@@ -121,6 +117,31 @@ class DoctrineCacheConverter implements ParamConverterInterface
         $request->attributes->set($entityAttributeName, $result);
         // Return success state: instance was retrieved!
         return true;
+    }
+
+    /**
+     * Set necessary entity uuid without finding it in request attributes.
+     *
+     * @param Request        $request
+     * @param ParamConverter $configuration
+     *
+     * @return bool
+     *
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    private function setEntityUuidWithSpecialCase(Request $request, ParamConverter $configuration): bool
+    {
+        // Particular case for Partner entity which can be found by email (e.g controller forwarding)!
+        if (Partner::class === $configuration->getClass() && null !== $email = $request->get('email')) {
+            /** @var PartnerRepository $partnerRepository */
+            $partnerRepository = $this->entityManager->getRepository(Partner::class);
+            if (\is_null($partner = $partnerRepository->findOneByEmail(urldecode($email)))) {
+                return false;
+            }
+            $request->attributes->set('uuid', $partner->getUuid()->toString());
+            return true;
+        }
+        return false;
     }
 
     /**
