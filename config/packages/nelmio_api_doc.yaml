@@ -5,6 +5,8 @@ nelmio_api_doc:
             - { alias: client_list_data, type: App\Entity\Client, groups: [Default, Client_list] }
             - { alias: client_detail_data, type: App\Entity\Client, groups: [Default, Client_detail] }
             - { alias: partner_detail_data, type: App\Entity\Partner, groups: [Default, Partner_detail] }
+            - { alias: phone_list_data, type: App\Entity\Phone, groups: [Default, Phone_list] }
+            - { alias: phone_detail_data, type: App\Entity\Phone, groups: [Default, Phone_detail] }
     documentation:
         info:
             title: BileMo API
@@ -94,12 +96,16 @@ nelmio_api_doc:
                     bearerFormat: JWT
             schemas:
                 # Resources (look at models configuration)
-                partner_detail_data:
-                    description: "API partner details JSON schema"
                 client_list_data:
                     description: "API client list JSON schema"
                 client_detail_data:
                     description: "API client details JSON schema"
+                partner_detail_data:
+                    description: "API partner details JSON schema"
+                phone_list_data:
+                    description: "API phone list JSON schema"
+                phone_detail_data:
+                    description: "API phone details JSON schema"
                 # Errors
                 api_jwt_error_400:
                     description: "API JWT error 400 JSON schema"

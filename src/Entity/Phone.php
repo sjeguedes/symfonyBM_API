@@ -58,6 +58,8 @@ class Phone
     /**
      * @var UuidInterface
      *
+     * A universal unique identifier to differentiate a result
+     *
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
      *
@@ -69,6 +71,8 @@ class Phone
     /**
      * @var string|null
      *
+     * A category
+     *
      * @ORM\Column(type="string", length=45)
      *
      * @Serializer\Groups({"Phone_detail", "Phone_detail"})
@@ -77,6 +81,8 @@ class Phone
 
     /**
      * @var string|null
+     *
+     * A particular phone brand
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -87,6 +93,8 @@ class Phone
     /**
      * @var string|null
      *
+     * A particular model reference
+     *
      * @ORM\Column(type="string", length=45, unique=true)
      *
      * @Serializer\Groups({"Phone_list", "Phone_detail"})
@@ -95,6 +103,8 @@ class Phone
 
     /**
      * @var string|null
+     *
+     * A particular color
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -105,6 +115,8 @@ class Phone
     /**
      * @var string|null
      *
+     * A practical information dedicated to clients
+     *
      * @ORM\Column(type="text")
      *
      * @Serializer\Groups({"Phone_detail"})
@@ -113,6 +125,8 @@ class Phone
 
     /**
      * @var string|null
+     *
+     * A public price dedicated to clients
      *
      * @ORM\Column(type="decimal", precision=6, scale=2)
      *
@@ -133,18 +147,24 @@ class Phone
     /**
      * @var \DateTimeImmutable
      *
+     * A date of creation
+     *
      * @ORM\Column(type="datetime_immutable")
      *
      * @Serializer\Groups({"Phone_list", "Phone_detail"})
+     * @Serializer\Type("DateTimeImmutable")
      */
     private $creationDate;
 
     /**
      * @var \DateTimeImmutable
      *
+     * A date of last update (the same as date of creation by default)
+     *
      * @ORM\Column(type="datetime_immutable", nullable=true)
      *
      * @Serializer\Groups({"Phone_detail"})
+     * @Serializer\Type("DateTimeImmutable")
      */
     private $updateDate;
 

@@ -79,11 +79,11 @@ class ClientController extends AbstractAPIController
      * )
      *
      * @OA\Get(
-     *     description="Get clients list associated to authenticated partner",
+     *     description="Get client list associated to authenticated partner",
      *     @OA\Parameter(
      *          in="query",
      *          name="page",
-     *          description="A page number",
+     *          description="A page number to retrieve a particular set of clients",
      *          @OA\Schema(
      *              type="integer"
      *          )
@@ -106,7 +106,7 @@ class ClientController extends AbstractAPIController
      *
      * @OA\Response(
      *     response=200,
-     *     description="Get current authenticated clients list",
+     *     description="Get current authenticated client list",
      *     @OA\MediaType(
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(

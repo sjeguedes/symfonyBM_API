@@ -145,7 +145,7 @@ class Client
     /**
      * @var \DateTimeImmutable
      *
-     * A date of last update (the same of date of creation by default)
+     * A date of last update (the same as date of creation by default)
      *
      * @ORM\Column(type="datetime_immutable", nullable=true)
      *
