@@ -11,7 +11,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Hateoas\Configuration\Annotation as Hateoas;
 use JMS\Serializer\Annotation as Serializer;
 use Lexik\Bundle\JWTAuthenticationBundle\Security\User\JWTUserInterface;
-use OpenApi\Annotations as OA;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -25,8 +24,6 @@ use Symfony\Component\Validator\Mapping\ClassMetadata;
  * Define an API consumer which has associated clients.
  * Please note that partner can have access to a particular list of phones
  * event if it is not needed to run application.
- *
- * @OA\Schema(title="partner")
  *
  * @Hateoas\Relation(
  *     "self",

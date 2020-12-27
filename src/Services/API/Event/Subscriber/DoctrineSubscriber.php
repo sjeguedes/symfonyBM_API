@@ -11,18 +11,12 @@ use App\Entity\Partner;
 use App\Entity\Phone;
 use App\Repository\AbstractAPIRepository;
 use App\Repository\HTTPCacheRepository;
-use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\Common\EventSubscriber;
-use Doctrine\ORM\Cache;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
-use Psr\Cache\CacheItemInterface;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Cache\Adapter\DoctrineAdapter;
-use Symfony\Component\Cache\CacheItem;
-use Symfony\Contracts\Cache\CacheInterface;
-use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
@@ -56,11 +50,6 @@ class DoctrineSubscriber implements EventSubscriber
      * @var TagAwareCacheInterface
      */
     private $cache;
-
-    /**
-     * @var CacheProvider
-     */
-    private $cacheAdapter;
 
     /**
      * DoctrineSubscriber constructor.
@@ -224,6 +213,7 @@ class DoctrineSubscriber implements EventSubscriber
                         $httpCache->setEtagToken($httpCache->getUpdateDate());
                         // Remove HTTPCache entity if necessary
                         !$isRemoval ?: $this->entityManager->remove($httpCache);
+
                     }
                     break;
                 // Update collection list HTTPCache instance(s)

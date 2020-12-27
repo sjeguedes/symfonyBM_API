@@ -8,13 +8,10 @@ use App\Entity\HTTPCache;
 use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Security\PartnerVoter;
-use JMS\Serializer\SerializationContext;
-use JMS\Serializer\SerializerInterface;
 use Nelmio\ApiDocBundle\Annotation as ApiDoc;
 use OpenApi\Annotations as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -96,7 +93,13 @@ class PartnerController extends AbstractAPIController
      * @OA\Response(
      *     response=200,
      *     description="Get current authenticated partner details",
-     *     @ApiDoc\Model(type=Partner::class, groups={"Partner_detail"}),
+     *     @OA\MediaType(
+     *          mediaType="application/vnd.hal+json",
+     *          schema=@OA\Schema(
+     *              type="object",
+     *              ref=@ApiDoc\Model(type=Partner::class, groups={"Default", "Partner_detail"})
+     *          )
+     *     ),
      *     @OA\Header(
      *          header="Content-Type",
      *          ref="#/components/headers/content_type"
@@ -203,7 +206,13 @@ class PartnerController extends AbstractAPIController
      * @OA\Response(
      *     response=200,
      *     description="Get current authenticated partner details",
-     *     @ApiDoc\Model(type=Partner::class, groups={"Partner_detail"}),
+     *     @OA\MediaType(
+     *          mediaType="application/vnd.hal+json",
+     *          schema=@OA\Schema(
+     *              type="object",
+     *              ref=@ApiDoc\Model(type=Partner::class, groups={"Default", "Partner_detail"})
+     *          )
+     *     ),
      *     @OA\Header(
      *          header="Content-Type",
      *          ref="#/components/headers/content_type"

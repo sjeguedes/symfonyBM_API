@@ -1,4 +1,10 @@
 nelmio_api_doc:
+    # Allow entity schemas (models) custom names
+    models:
+        names:
+            - { alias: client_list_data, type: App\Entity\Client, groups: [Default, Client_list] }
+            - { alias: client_detail_data, type: App\Entity\Client, groups: [Default, Client_detail] }
+            - { alias: partner_detail_data, type: App\Entity\Partner, groups: [Default, Partner_detail] }
     documentation:
         info:
             title: BileMo API
@@ -6,6 +12,10 @@ nelmio_api_doc:
             version: 1.0.0
         components:
             headers:
+                client_creation_location:
+                    description: "Resource link to view new client details thanks to Location header"
+                    schema:
+                        type: string
                 content_type:
                     description: "Resource and HAL HATEOAS data: JSON format application/hal+json"
                     schema:
@@ -29,7 +39,7 @@ nelmio_api_doc:
                 x_cache_ttl:
                     description: "Resource cache expiration max-age value stored thanks to this custom header"
                     schema:
-                        type: string
+                        type: integer
                 vary:
                     description: "Resource cache differentiation with two keys: Authorization Bearer and X-App-Cache-Id headers"
                     schema:
@@ -83,6 +93,14 @@ nelmio_api_doc:
                     scheme: bearer
                     bearerFormat: JWT
             schemas:
+                # Resources (look at models configuration)
+                partner_detail_data:
+                    description: "API partner details JSON schema"
+                client_list_data:
+                    description: "API client list JSON schema"
+                client_detail_data:
+                    description: "API client details JSON schema"
+                # Errors
                 api_jwt_error_400:
                     description: "API JWT error 400 JSON schema"
                     type: object
