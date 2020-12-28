@@ -10,14 +10,11 @@ use App\Entity\Phone;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
-use JMS\Serializer\SerializationContext;
-use JMS\Serializer\SerializerInterface;
 use Nelmio\ApiDocBundle\Annotation as ApiDoc;
 use OpenApi\Annotations as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,6 +25,27 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * Manage all requests made by authenticated administrator (special partner account) about API phone data management.
  *
+ * @OA\Response(
+ *     response=400,
+ *     ref="#/components/responses/bad_request"
+ * )
+ * @OA\Response(
+ *     response=401,
+ *     ref="#/components/responses/unauthorized"
+ * )
+ * @OA\Response(
+ *     response=403,
+ *     ref="#/components/responses/forbidden"
+ * )
+ * @OA\Response(
+ *     response=404,
+ *     ref="#/components/responses/not_found"
+ * )
+ * @OA\Response(
+ *     response=500,
+ *     ref="#/components/responses/internal"
+ * )
+ *
  * @OA\Tag(name="Administrator requests on partner phone(s)")
  *
  * @Route({
@@ -36,24 +54,8 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * @Security("is_granted('ROLE_API_ADMIN')")
  */
-class AdminPhoneController extends AbstractController
+class AdminPhoneController extends AbstractAPIController
 {
-    /**
-     * @var ResponseBuilder
-     */
-    private $responseBuilder;
-
-    /**
-     * @var SerializerInterface
-     */
-    private $serializer;
-
-    /**
-     * @var SerializationContext
-     */
-    private $serializationContext;
-
-
     /**
      * AdminPhoneController constructor.
      *
@@ -61,9 +63,7 @@ class AdminPhoneController extends AbstractController
      */
     public function __construct(ResponseBuilder $responseBuilder)
     {
-        $this->responseBuilder = $responseBuilder;
-        $this->serializer = $responseBuilder->getSerializationProvider()->getSerializer();
-        $this->serializationContext = $responseBuilder->getSerializationProvider()->getSerializationContext();
+        parent::__construct($responseBuilder);
     }
 
     /**
@@ -80,6 +80,75 @@ class AdminPhoneController extends AbstractController
      *     maxage="httpCache.getTtlExpiration()",
      *     lastModified="httpCache.getUpdateDate()",
      *     etag="httpCache.getEtagToken()"
+     * )
+     *
+     * @OA\Get(
+     *     description="Get phone list associated to selected partner",
+     *     @OA\Parameter(
+     *          in="path",
+     *          name="uuid",
+     *          description="A partner uuid",
+     *          @OA\Schema(
+     *              pattern="[\w-]{36}",
+     *              type="string"
+     *          )
+     *     ),
+     *     @OA\Parameter(
+     *          in="query",
+     *          name="page",
+     *          description="A page number to retrieve a particular set of phones",
+     *          @OA\Schema(
+     *              type="integer"
+     *          )
+     *     ),
+     *     @OA\Parameter(
+     *          in="query",
+     *          name="per_page",
+     *          description="A limit in order to define how many phones to show per page",
+     *          @OA\Schema(
+     *              type="integer"
+     *          )
+     *     )
+     * )
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Get phone list associated to selected partner",
+     *     @OA\MediaType(
+     *          mediaType="application/vnd.hal+json",
+     *          schema=@OA\Schema(
+     *             type="array",
+     *             items=@OA\Items(ref=@ApiDoc\Model(type=Phone::class, groups={"Default", "Phone_list"}))
+     *          )
+     *     ),
+     *    @OA\Header(
+     *          header="Content-Type",
+     *          ref="#/components/headers/content_type"
+     *     ),
+     *     @OA\Header(
+     *          header="Cache-Control",
+     *          ref="#/components/headers/cache_control"
+     *     ),
+     *     @OA\Header(
+     *          header="Etag",
+     *          ref="#/components/headers/etag"
+     *     ),
+     *     @OA\Header(
+     *          header="Last-Modified",
+     *          ref="#/components/headers/last_modified"
+     *     ),
+     *     @OA\Header(
+     *          header="X-App-Cache-Id",
+     *          ref="#/components/headers/x_cache_id"
+     *     ),
+     *     @OA\Header(
+     *          header="X-App-Cache-Ttl",
+     *          ref="#/components/headers/x_cache_ttl"
+     *     ),
+     *     @OA\Header(
+     *          header="Vary",
+     *          ref="#/components/headers/vary"
+     *    )
      * )
      *
      * @param FilterRequestHandler  $requestHandler,
