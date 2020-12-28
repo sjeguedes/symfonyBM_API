@@ -4,6 +4,7 @@ nelmio_api_doc:
         names:
             - { alias: client_list_data, type: App\Entity\Client, groups: [Default, Client_list] }
             - { alias: client_detail_data, type: App\Entity\Client, groups: [Default, Client_detail] }
+            - { alias: partner_list_data, type: App\Entity\Partner, groups: [Default, Partner_list] }
             - { alias: partner_detail_data, type: App\Entity\Partner, groups: [Default, Partner_detail] }
             - { alias: phone_list_data, type: App\Entity\Phone, groups: [Default, Phone_list] }
             - { alias: phone_detail_data, type: App\Entity\Phone, groups: [Default, Phone_detail] }
@@ -54,7 +55,7 @@ nelmio_api_doc:
                             schema:
                                 $ref: "#/components/schemas/api_jwt_error_400"
                 bad_request:
-                    description: "Wrong path and/or query parameter(s) used, or unexpected/malformed JSON"
+                    description: "Wrong path and/or query parameter(s) used, or unexpected/malformed request body content JSON string"
                     content:
                         application/problem+json:
                             schema:
@@ -66,7 +67,7 @@ nelmio_api_doc:
                             schema:
                                 $ref: "#/components/schemas/api_jwt_error_401"
                 unauthorized:
-                    description: "Expired or not found JWT token"
+                    description: "Expired, invalid or not found JWT token"
                     content:
                         application/problem+json:
                             schema:
@@ -146,7 +147,7 @@ nelmio_api_doc:
                             example: 401
                         message:
                             type: string
-                            example: Invalid (or expired) JWT Token
+                            example: Invalid (Expired or Not found) JWT Token
                 api_error_403:
                     description: "API error 403 JSON schema"
                     type: object

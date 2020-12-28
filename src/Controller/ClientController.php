@@ -330,13 +330,21 @@ class ClientController extends AbstractAPIController
      *
      * @OA\Response(
      *     response=201,
-     *     description="Create a new client, and link resource with Location header and no response content",
+     *     description="Create a new client associated to selected partner, and link resource with Location header and no resource response content",
      *     @OA\MediaType(
      *          mediaType="text/plain",
      *          schema=@OA\Schema(
      *              type="string",
      *              default="",
      *              example="Empty response returned"
+     *          )
+     *     ),
+     *     @OA\MediaType(
+     *          mediaType="application/json",
+     *          schema=@OA\Schema(
+     *              type="object",
+     *              @OA\Property(property="code", type="integer", example="201"),
+     *              @OA\Property(property="message", type="string", example="Client resource successfully created")
      *          )
      *     ),
      *     @OA\Header(
@@ -346,7 +354,7 @@ class ClientController extends AbstractAPIController
      * )
      * @OA\Response(
      *     response="400 (validation)",
-     *     description="Invalidate data due to request body JSON content wrong properties values",
+     *     description="Invalidate data due to request body JSON content with wrong properties values",
      *     @OA\MediaType(
      *          mediaType="application/problem+json",
      *          schema=@OA\Schema(
