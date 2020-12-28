@@ -106,7 +106,7 @@ class ClientController extends AbstractAPIController
      *
      * @OA\Response(
      *     response=200,
-     *     description="Get current authenticated client list",
+     *     description="Get client list associated to authenticated partner",
      *     @OA\MediaType(
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(

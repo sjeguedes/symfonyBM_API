@@ -104,7 +104,7 @@ class PhoneController extends AbstractAPIController
      *
      * @OA\Response(
      *     response=200,
-     *     description="Get current authenticated phone list",
+     *     description="Get phone list associated to authenticated partner",
      *     @OA\MediaType(
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(
