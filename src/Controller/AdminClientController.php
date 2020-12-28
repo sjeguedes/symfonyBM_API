@@ -63,7 +63,8 @@ class AdminClientController extends AbstractAPIController
      *
      * @param ResponseBuilder $responseBuilder
      */
-    public function __construct(ResponseBuilder $responseBuilder) {
+    public function __construct(ResponseBuilder $responseBuilder)
+    {
         parent::__construct($responseBuilder);
     }
 
@@ -119,7 +120,7 @@ class AdminClientController extends AbstractAPIController
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(
      *             type="array",
-     *              items=@OA\Items(ref=@ApiDoc\Model(type=Client::class, groups={"Default", "Client_list"}))
+     *             items=@OA\Items(ref=@ApiDoc\Model(type=Client::class, groups={"Default", "Client_list"}))
      *          )
      *     ),
      *    @OA\Header(

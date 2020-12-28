@@ -109,7 +109,7 @@ class PhoneController extends AbstractAPIController
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(
      *             type="array",
-     *              items=@OA\Items(ref=@ApiDoc\Model(type=Phone::class, groups={"Default", "Phone_list"}))
+     *             items=@OA\Items(ref=@ApiDoc\Model(type=Phone::class, groups={"Default", "Phone_list"}))
      *          )
      *     ),
      *    @OA\Header(

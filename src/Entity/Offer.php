@@ -54,11 +54,13 @@ class Offer
     /**
      * @var UuidInterface
      *
+     * A universal unique identifier to differentiate a result
+     *
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
      *
-     * @Serializer\Type("string")
      * @Serializer\Groups({"Offer_list", "Offer_detail"})
+     * @Serializer\Type("string")
      */
     private $uuid;
 
@@ -85,9 +87,12 @@ class Offer
     /**
      * @var \DateTimeImmutable
      *
+     * A date of creation
+     *
      * @ORM\Column(type="datetime_immutable")
      *
      * @Serializer\Groups({"Offer_list", "Offer_detail"})
+     * @Serializer\Type("DateTimeImmutable")
      */
     private $creationDate;
 

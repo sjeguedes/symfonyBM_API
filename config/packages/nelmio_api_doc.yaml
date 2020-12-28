@@ -4,6 +4,8 @@ nelmio_api_doc:
         names:
             - { alias: client_list_data, type: App\Entity\Client, groups: [Default, Client_list] }
             - { alias: client_detail_data, type: App\Entity\Client, groups: [Default, Client_detail] }
+            - { alias: offer_list_data, type: App\Entity\Offer, groups: [Default, Offer_list, Partner_list, Phone_list] }
+            - { alias: offer_detail_data, type: App\Entity\Offer, groups: [Default, Offer_detail] }
             - { alias: partner_list_data, type: App\Entity\Partner, groups: [Default, Partner_list] }
             - { alias: partner_detail_data, type: App\Entity\Partner, groups: [Default, Partner_detail] }
             - { alias: phone_list_data, type: App\Entity\Phone, groups: [Default, Phone_list] }
@@ -101,6 +103,10 @@ nelmio_api_doc:
                     description: "API client list JSON schema"
                 client_detail_data:
                     description: "API client details JSON schema"
+                offer_list_data:
+                    description: "API offer list JSON schema"
+                offer_detail_data:
+                    description: "API offer details JSON schema"
                 partner_detail_data:
                     description: "API partner details JSON schema"
                 phone_list_data:

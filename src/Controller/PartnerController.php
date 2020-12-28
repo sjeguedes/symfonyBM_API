@@ -56,9 +56,8 @@ class PartnerController extends AbstractAPIController
      *
      * @param ResponseBuilder $responseBuilder
      */
-    public function __construct(
-        ResponseBuilder $responseBuilder
-    ) {
+    public function __construct(ResponseBuilder $responseBuilder)
+    {
         parent::__construct($responseBuilder);
     }
 

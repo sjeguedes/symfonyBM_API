@@ -60,7 +60,8 @@ class AdminPartnerController extends AbstractAPIController
      *
      * @param ResponseBuilder $responseBuilder
      */
-    public function __construct(ResponseBuilder $responseBuilder) {
+    public function __construct(ResponseBuilder $responseBuilder)
+    {
         parent::__construct($responseBuilder);
     }
 
@@ -106,7 +107,7 @@ class AdminPartnerController extends AbstractAPIController
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(
      *             type="array",
-     *              items=@OA\Items(ref=@ApiDoc\Model(type=Partner::class, groups={"Default", "Partner_list"}))
+     *             items=@OA\Items(ref=@ApiDoc\Model(type=Partner::class, groups={"Default", "Partner_list"}))
      *          )
      *     ),
      *    @OA\Header(
