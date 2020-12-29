@@ -205,15 +205,14 @@ class DoctrineSubscriber implements EventSubscriber
                 case HTTPCache::RESOURCE_TYPES['unique']:
                     // Get possible entry based on request URI which corresponds to involved entity
                     $requestURI = $httpCache->getRequestUri();
-                    preg_match('/\/([\w-]{36})(\?[\w-&=]+)?$/', $requestURI, $matches, PREG_UNMATCHED_AS_NULL);
+                    preg_match('/\/([\w-]{36})(\?[\w-&=]+)?$/', $requestURI, $matches);
                     // This result matches involved entity!
-                    if (!\is_null($matches[1]) && $entityUuid->toString() === $matches[1]) {
+                    if (isset($matches[1]) && $entityUuid->toString() === $matches[1]) {
                         // Modify these properties to change "Last-Modified" and "Etag" headers values later in controller
                         $httpCache->setUpdateDate(new \DateTimeImmutable());
                         $httpCache->setEtagToken($httpCache->getUpdateDate());
                         // Remove HTTPCache entity if necessary
                         !$isRemoval ?: $this->entityManager->remove($httpCache);
-
                     }
                     break;
                 // Update collection list HTTPCache instance(s)

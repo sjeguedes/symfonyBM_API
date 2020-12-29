@@ -52,6 +52,7 @@ class CacheKernel extends HttpCache
         if (Response::HTTP_NOT_MODIFIED === $response->getStatusCode()) {
             $response = $this->forwardNotModifiedCachedResponse($request, $response);
         }
+
         // Get response from parent method
         return $response;
     }
@@ -98,7 +99,6 @@ class CacheKernel extends HttpCache
      */
     private function refreshValidCachedResponseAfterExpiration(Request $request, Response $response): Response
     {
-        $response = $this->validate($request, $response);
         if (Response::HTTP_OK === $response->getStatusCode()) {
             // Update cache control max-age (thanks to app custom header) and re-validation headers
             $response->setMaxAge((int) $response->headers->get('X-App-Cache-Ttl'));
