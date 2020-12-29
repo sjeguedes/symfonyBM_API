@@ -151,7 +151,7 @@ class AdminPartnerController extends AbstractAPIController
      *
      * @Route({
      *     "en": "/partners"
-     * }, defaults={"isCollection"=true}, name="list_partners", methods={"GET"})
+     * }, defaults={"entityType"=Partner::class, "isCollection"=true}, name="list_partners", methods={"GET"})
      *
      * @throws \Exception
      */

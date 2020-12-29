@@ -166,7 +166,7 @@ class AdminClientController extends AbstractAPIController
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}/clients"
-     * }, defaults={"entityType"=Partner::class, "isCollection"=true}, name="list_clients_per_partner", methods={"GET"})
+     * }, defaults={"entityType"=Client::class, "isCollection"=true}, name="list_clients_per_partner", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -284,6 +284,8 @@ class AdminClientController extends AbstractAPIController
      * @param Request               $request
      * @param UrlGeneratorInterface $urlGenerator
      *
+     * @ParamConverter("partner", converter="doctrine.cache.custom_converter")
+     *
      * @return JsonResponse
      *
      * @Route({
@@ -369,8 +371,8 @@ class AdminClientController extends AbstractAPIController
      * @param Partner $partner
      * @param Client  $client
      *
-     * @ParamConverter("partner", options={"mapping": {"pUuid": "uuid"}})
-     * @ParamConverter("client", options={"mapping": {"cUuid": "uuid"}})
+     * @ParamConverter("partner", converter="doctrine.cache.custom_converter")
+     * @ParamConverter("client", converter="doctrine.cache.custom_converter")
      *
      * @return Response
      *

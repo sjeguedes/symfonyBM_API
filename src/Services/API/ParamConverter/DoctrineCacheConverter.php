@@ -53,6 +53,11 @@ class DoctrineCacheConverter implements ParamConverterInterface
     private $cache;
 
     /**
+     * @var array
+     */
+    private $uuidValues;
+
+    /**
      * DoctrineCacheConverter constructor.
      *
      * @param EntityManagerInterface $entityManager
@@ -62,6 +67,8 @@ class DoctrineCacheConverter implements ParamConverterInterface
     {
         $this->entityManager = $entityManager;
         $this->cache = $doctrineCache;
+        // Will store several uuid values to find at least two different entity instances
+        $this->uuidValues = [];
     }
 
     /**
@@ -85,8 +92,8 @@ class DoctrineCacheConverter implements ParamConverterInterface
         $parameters = [
             'cacheKey' => ucfirst($entityAttributeName) .'_' . $request->get('uuid'),
             'cacheTag' => $entityAttributeName . '_tag',
-            'class'    => $request->get('entityType'),
-            'uuid'     => $request->get('uuid')
+            'class'    => array_search($entityAttributeName, self::NAMES),
+            'uuid'     => empty($this->uuidValues) ? $request->get('uuid') : $this->uuidValues[$entityAttributeName]
         ];
         // Get entity from cache or create cache data in case of miss:
         $result = $this->cache->get($parameters['cacheKey'], function (ItemInterface $item) use ($parameters) {
@@ -138,7 +145,15 @@ class DoctrineCacheConverter implements ParamConverterInterface
             if (\is_null($partner = $partnerRepository->findOneByEmail(urldecode($email)))) {
                 return false;
             }
+            // Define the expected "uuid" attribute which concerns current entity to find with this custom converter.
             $request->attributes->set('uuid', $partner->getUuid()->toString());
+            return true;
+        }
+        // Particular case when at least two uuid attributes exist (e.g. for resource and sub resource)
+        $requestAttributeToFind = lcfirst(substr($configuration->getName(), 0, 1)) . 'Uuid';
+        if ($request->attributes->has($requestAttributeToFind)) {
+            // Define the expected "uuid" parameter which concerns current entity to find with this custom converter.
+            $this->uuidValues[$configuration->getName()] = $request->attributes->get($requestAttributeToFind);
             return true;
         }
         return false;

@@ -96,7 +96,7 @@ class PhoneController extends AbstractAPIController
      *     ),
      *     @OA\Parameter(
      *          in="query",
-     *          name="catalog",
+     *          name="full_list",
      *          description="A full phone list relative to application available for all authenticated partners",
      *          allowEmptyValue=true
      *     )
@@ -153,7 +153,7 @@ class PhoneController extends AbstractAPIController
      *
      * @Route({
      *     "en": "/phones"
-     * }, defaults={"isCollection"=true}, name="list_phones", methods={"GET"})
+     * }, defaults={"entityType"=Phone::class, "isCollection"=true}, name="list_phones", methods={"GET"})
      *
      * @throws \Exception
      */

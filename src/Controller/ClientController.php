@@ -155,7 +155,7 @@ class ClientController extends AbstractAPIController
      *
      * @Route({
      *     "en": "/clients"
-     * }, defaults={"isCollection"=true}, name="list_clients", methods={"GET"})
+     * }, defaults={"entityType"=Client::class, "isCollection"=true}, name="list_clients", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -458,7 +458,7 @@ class ClientController extends AbstractAPIController
      *
      * @param Client $client
      *
-     * @ParamConverter("client", converter="doctrine.orm")
+     * @ParamConverter("client", converter="doctrine.cache.custom_converter")
      *
      * @return Response
      *

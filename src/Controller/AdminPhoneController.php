@@ -164,7 +164,7 @@ class AdminPhoneController extends AbstractAPIController
      *
      * @Route({
      *     "en": "/partners/{uuid<[\w-]{36}>}/phones"
-     * }, defaults={"entityType"=Partner::class, "isCollection"=true}, name="list_phones_per_partner", methods={"GET"})
+     * }, defaults={"entityType"=Phone::class, "isCollection"=true}, name="list_phones_per_partner", methods={"GET"})
      *
      * @throws \Exception
      */
