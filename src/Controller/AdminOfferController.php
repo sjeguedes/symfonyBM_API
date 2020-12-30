@@ -110,8 +110,7 @@ class AdminOfferController extends AbstractAPIController
      *     @OA\MediaType(
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(
-     *             type="array",
-     *             items=@OA\Items(ref=@ApiDoc\Model(type=Offer::class, groups={"Default", "Offer_list", "Partner_list", "Phone_list"}))
+     *             ref="#/components/schemas/paginated_offer_collection"
      *          )
      *     ),
      *    @OA\Header(
@@ -250,8 +249,7 @@ class AdminOfferController extends AbstractAPIController
      *     @OA\MediaType(
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(
-     *             type="array",
-     *             items=@OA\Items(ref=@ApiDoc\Model(type=Offer::class, groups={"Default", "Offer_list", "Partner_list", "Phone_list"}))
+     *             ref="#/components/schemas/paginated_offer_collection"
      *          )
      *     ),
      *    @OA\Header(
@@ -393,8 +391,7 @@ class AdminOfferController extends AbstractAPIController
      *     @OA\MediaType(
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(
-     *             type="array",
-     *             items=@OA\Items(ref=@ApiDoc\Model(type=Offer::class, groups={"Default", "Offer_list", "Partner_list", "Phone_list"}))
+     *             ref="#/components/schemas/paginated_offer_collection"
      *          )
      *     ),
      *    @OA\Header(

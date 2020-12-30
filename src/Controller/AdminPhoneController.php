@@ -117,8 +117,7 @@ class AdminPhoneController extends AbstractAPIController
      *     @OA\MediaType(
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(
-     *             type="array",
-     *             items=@OA\Items(ref=@ApiDoc\Model(type=Phone::class, groups={"Default", "Phone_list"}))
+     *             ref="#/components/schemas/paginated_phone_collection"
      *          )
      *     ),
      *    @OA\Header(

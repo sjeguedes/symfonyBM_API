@@ -106,8 +106,7 @@ class AdminPartnerController extends AbstractAPIController
      *     @OA\MediaType(
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(
-     *             type="array",
-     *             items=@OA\Items(ref=@ApiDoc\Model(type=Partner::class, groups={"Default", "Partner_list"}))
+     *             ref="#/components/schemas/paginated_partner_collection"
      *          )
      *     ),
      *    @OA\Header(

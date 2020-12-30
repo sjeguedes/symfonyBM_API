@@ -119,8 +119,7 @@ class AdminClientController extends AbstractAPIController
      *     @OA\MediaType(
      *          mediaType="application/vnd.hal+json",
      *          schema=@OA\Schema(
-     *             type="array",
-     *             items=@OA\Items(ref=@ApiDoc\Model(type=Client::class, groups={"Default", "Client_list"}))
+     *             ref="#/components/schemas/paginated_client_collection"
      *          )
      *     ),
      *    @OA\Header(

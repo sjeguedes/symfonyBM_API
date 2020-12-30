@@ -19,7 +19,7 @@ app.swagger:
     controller: nelmio_api_doc.controller.swagger_ui
 
 ## Custom app default redirection
-# e.g. /api/v1/doc -> is redirected to /api/v1/default/doc -> which redirected to /api/v1/consumer/doc thanks to this above
+# e.g. /api/v1/doc -> is redirected to /api/v1/default/doc -> which is redirected to /api/v1/consumer/doc thanks to this above
 app.swagger_ui.default:
     path: '/%api_and_version_path_prefix%/default/doc'
     controller: Symfony\Bundle\FrameworkBundle\Controller\RedirectController
