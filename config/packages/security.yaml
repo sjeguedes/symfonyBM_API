@@ -25,10 +25,6 @@ security:
                 password_path:  api_account.password
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
-        refresh: # e.g. ^/api/v1/token/refresh
-            pattern:  '^/api/v\d+/token/refresh'
-            stateless: true
-            anonymous: true
         api_admin_doc: # ^/api/v1/administrator/doc or ^/api/v1/specification/administrator/
             pattern: '^/api/v\d+/(administrator/doc)|(specification/administrator)'
             security: false
@@ -58,8 +54,3 @@ security:
     # Note: Only the *first* access control that matches will be used
     access_control:
         # not useful with stateless API process
-        - { path: '^/api/v\d+/login', roles: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: '^/api/v\d+/token/refresh', roles: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: '^/api/v\d+/(administrator/doc)|(specification/administrator)', roles: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: '^/api/v\d+/(default|consumer/doc)|(specification/default|consumer)', roles: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
