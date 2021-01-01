@@ -7,6 +7,7 @@ namespace App\Controller;
 use Nelmio\ApiDocBundle\Annotation as ApiDoc;
 use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -15,14 +16,14 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * This is a kind of fake controller to use OpenAPi documentation.
  *
+ * @ApiDoc\Security()
+ *
  * @OA\Tag(name="Login - Authentication")
  */
 class SecurityController extends AbstractController
 {
     /**
      * Login to get a JWT in order to authenticate on request.
-     *
-     * @ApiDoc\Security()
      *
      * @OA\RequestBody(
      *     description="Partner account credentials",
@@ -61,11 +62,27 @@ class SecurityController extends AbstractController
      *     ref="#/components/responses/jwt_unauthorized"
      * )
      *
+     * @return JsonResponse
+     *
      * @Route({
      *     "en": "/login/check"
      * }, name="lexik_login_check", methods={"POST"})
      */
-    public function getJWT(): Response
+    public function getJWT(): JsonResponse
+    {
+        // This code is not reached!
+    }
+
+    /**
+     * Get a JWT refresh token from database to simplify authentication.
+     *
+     * @return JsonResponse
+     *
+     * @Route({
+     *     "en": "/token/refresh"
+     * }, defaults={"_controller"="gesdinet.jwtrefreshtoken:refresh"}, name="gesdinet_jwt_refresh_token", methods={"POST"})
+     */
+    public function getJWTRefreshToken(): JsonResponse
     {
         // This code is not reached!
     }

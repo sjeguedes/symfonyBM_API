@@ -1,0 +1,15 @@
+{# https://symfony.com/doc/4.x/bundles/NelmioApiDocBundle/customization.html #}
+
+{# templates/bundles/NelmioApiDocBundle/SwaggerUi/index.html.twig #}
+
+{#
+    To avoid a "reached nested level" error an exclamation mark `!` has to be added
+    See https://symfony.com/blog/new-in-symfony-3-4-improved-the-overriding-of-templates
+#}
+{% extends '@!NelmioApiDoc/SwaggerUi/index.html.twig' %}
+
+{# Import custom stylesheet to customise Swagger UI documentation #}
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/custom-swagger-style.css') }}">
+{% endblock stylesheets %}
