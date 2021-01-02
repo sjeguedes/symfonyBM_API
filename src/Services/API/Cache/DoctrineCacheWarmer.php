@@ -16,7 +16,7 @@ use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
  *
  * @see https://symfony.com/doc/current/reference/dic_tags.html#kernel-cache-warmer
  */
-class DoctrineCacheWarmer implements CacheWarmerInterface
+final class DoctrineCacheWarmer implements CacheWarmerInterface
 {
     /**
      * @var ParameterBagInterface

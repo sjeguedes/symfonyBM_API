@@ -24,7 +24,7 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
  * @see https://github.com/symfony/symfony/blob/master/src/Symfony/Component/HttpKernel/HttpCache/HttpCache.php
  * @see https://symfony.com/doc/current/http_cache.html
  */
-class CacheKernel extends HttpCache
+final class CacheKernel extends HttpCache
 {
     protected function getOptions(): array
     {

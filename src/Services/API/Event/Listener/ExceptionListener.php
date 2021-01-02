@@ -11,7 +11,6 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpException;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
@@ -20,7 +19,7 @@ use Symfony\Component\Validator\ConstraintViolationListInterface;
  *
  * Manage API error responses.
  */
-class ExceptionListener
+final class ExceptionListener
 {
     /**
      * Define managed error or exception class names.
@@ -78,11 +77,6 @@ class ExceptionListener
                 break;
             case Response::HTTP_INTERNAL_SERVER_ERROR: // 500
                 $message = 'Technical error: please contact us if necessary!';
-                // Allow Voter security exception from controllers
-                if ($exception instanceof AccessDeniedException) {
-                    $statusCode = Response::HTTP_FORBIDDEN; // redefine status code to 403
-                    $message = $exception->getMessage(); // keep original message
-                }
                 // Allow JMS (de)serialization exception messages
                 if ($exception instanceof RuntimeException) {
                     $statusCode = Response::HTTP_BAD_REQUEST; // redefine status code to 400

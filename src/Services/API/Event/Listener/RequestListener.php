@@ -15,7 +15,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
  *
  * Manage API requests.
  */
-class RequestListener
+final class RequestListener
 {
     /**
      * @var ParameterBagInterface

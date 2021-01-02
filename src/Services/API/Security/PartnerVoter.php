@@ -15,7 +15,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
  *
  * Manage permissions against particular authenticated Partner actions on API Partner entities.
  */
-class PartnerVoter extends Voter
+final class PartnerVoter extends Voter
 {
     /**
      * Define permissions labels.

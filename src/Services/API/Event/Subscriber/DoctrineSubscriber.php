@@ -29,7 +29,7 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
  * @see https://symfony.com/doc/current/doctrine/events.html#doctrine-lifecycle-listener
  * @see https://symfony.com/doc/current/components/cache/cache_invalidation.html
  */
-class DoctrineSubscriber implements EventSubscriber
+final class DoctrineSubscriber implements EventSubscriber
 {
     /**
      * Define entity types involved in this subscriber.

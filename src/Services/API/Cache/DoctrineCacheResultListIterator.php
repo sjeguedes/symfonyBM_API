@@ -9,7 +9,7 @@ namespace App\Services\API\Cache;
  *
  * Manage API paginated collection for cached data.
  */
-class DoctrineCacheResultListIterator implements \IteratorAggregate
+final class DoctrineCacheResultListIterator implements \IteratorAggregate
 {
     /**
      * @var int
