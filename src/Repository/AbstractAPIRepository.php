@@ -86,9 +86,9 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
      * @param string     $partnerUuid
      * @param array|null $paginationData
      *
-     * @return \IteratorAggregate|Paginator
+     * @return \IteratorAggregate|Paginator|null
      */
-    abstract public function findListByPartner(string $partnerUuid, ?array $paginationData): \IteratorAggregate;
+    abstract public function findListByPartner(string $partnerUuid, ?array $paginationData): ?\IteratorAggregate;
 
     /**
      * Find a set of entities with offset and limit integers parameters with Doctrine paginated results

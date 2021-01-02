@@ -147,10 +147,19 @@ final class HTTPCacheConverter implements ParamConverterInterface
     {
         $isCollection = (bool) $request->get('isCollection');
         // Get requested entity uuid which will be used
-        $isEntityUuid = preg_match('/\/([\w-]{36})(\?[\w-&=]+)?$/', $request->getRequestUri(), $matches);
+        $uri = $request->getRequestUri();
+        // $request->get('uuid') and $request->get('email') is a weaker approach!
+        $uuidPattern = '[\w-]{36}';
+        $isEntityUuid = preg_match('/\/(' . $uuidPattern . ')(\?[\w-&=]+)?$/', $uri);
+        // CAUTION: be careful with encoded URI with use of cURL!
+        $emailPattern = '[a-zA-Z0-9_.-]+(%40|@)[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+';
+        $isPartnerEmail = preg_match('/\/(' . $emailPattern . ')(\?[\w-&=]+)?$/', $uri);
         // Check correct config for single entity (Client, Partner, Phone, Offer) instance GET request
-        if (\is_null($isCollection) || !$isCollection && !$isEntityUuid) {
-            throw new RuntimeException('Request "isCollection" attribute null, or defined with a wrong value');
+        if (\is_null($isCollection) || !$isCollection && (!$isEntityUuid && !$isPartnerEmail)) {
+            throw new RuntimeException(
+                'Request "isCollection" attribute null or defined with a wrong value,  
+                         or no associated uuid or email attribute found'
+            );
         }
         return $isCollection;
     }

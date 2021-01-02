@@ -11,11 +11,10 @@ use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\API\Security\ClientVoter;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
-use JMS\Serializer\SerializationContext;
-use JMS\Serializer\SerializerInterface;
+use Nelmio\ApiDocBundle\Annotation as ApiDoc;
+use OpenApi\Annotations as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,24 +26,32 @@ use Symfony\Component\Security\Core\User\UserInterface;
  * Class ClientController
  *
  * Manage all requests from simple partner user (consumer) about his clients data.
+ *
+ * @OA\Response(
+ *     response=400,
+ *     ref="#/components/responses/bad_request"
+ * )
+ * @OA\Response(
+ *     response=401,
+ *     ref="#/components/responses/unauthorized"
+ * )
+ * @OA\Response(
+ *     response=403,
+ *     ref="#/components/responses/forbidden"
+ * )
+ * @OA\Response(
+ *     response=404,
+ *     ref="#/components/responses/not_found"
+ * )
+ * @OA\Response(
+ *     response=500,
+ *     ref="#/components/responses/internal"
+ * )
+ *
+ * @OA\Tag(name="Partner requests to manage his own client(s)")
  */
-class ClientController extends AbstractController
+class ClientController extends AbstractAPIController
 {
-    /**
-     * @var ResponseBuilder
-     */
-    private $responseBuilder;
-
-    /**
-     * @var SerializerInterface
-     */
-    private $serializer;
-
-    /**
-     * @var SerializationContext
-     */
-    private $serializationContext;
-
     /**
      * ClientController constructor.
      *
@@ -52,9 +59,7 @@ class ClientController extends AbstractController
      */
     public function __construct(ResponseBuilder $responseBuilder)
     {
-        $this->responseBuilder = $responseBuilder;
-        $this->serializer = $responseBuilder->getSerializationProvider()->getSerializer();
-        $this->serializationContext = $responseBuilder->getSerializationProvider()->getSerializationContext();
+        parent::__construct($responseBuilder);
     }
 
     /**
@@ -73,6 +78,71 @@ class ClientController extends AbstractController
      *     etag="httpCache.getEtagToken()"
      * )
      *
+     * @OA\Get(
+     *     description="Get client list associated to authenticated partner",
+     *     @OA\Parameter(
+     *          in="query",
+     *          name="page",
+     *          description="A page number to retrieve a particular set of clients",
+     *          @OA\Schema(
+     *              type="integer"
+     *          )
+     *     ),
+     *     @OA\Parameter(
+     *          in="query",
+     *          name="per_page",
+     *          description="A limit in order to define how many clients to show per page",
+     *          @OA\Schema(
+     *              type="integer"
+     *          )
+     *     ),
+     *     @OA\Parameter(
+     *          in="query",
+     *          name="full_list",
+     *          description="A full client list relative to application available for administrator only",
+     *          allowEmptyValue=true
+     *     )
+     * )
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Get client list associated to authenticated partner",
+     *     @OA\MediaType(
+     *          mediaType="application/vnd.hal+json",
+     *          schema=@OA\Schema(
+     *             ref="#/components/schemas/paginated_client_collection"
+     *          )
+     *     ),
+      *    @OA\Header(
+     *          header="Content-Type",
+     *          ref="#/components/headers/content_type"
+     *     ),
+     *     @OA\Header(
+     *          header="Cache-Control",
+     *          ref="#/components/headers/cache_control"
+     *     ),
+     *     @OA\Header(
+     *          header="Etag",
+     *          ref="#/components/headers/etag"
+     *     ),
+     *     @OA\Header(
+     *          header="Last-Modified",
+     *          ref="#/components/headers/last_modified"
+     *     ),
+     *     @OA\Header(
+     *          header="X-App-Cache-Id",
+     *          ref="#/components/headers/x_cache_id"
+     *     ),
+     *     @OA\Header(
+     *          header="X-App-Cache-Ttl",
+     *          ref="#/components/headers/x_cache_ttl"
+     *     ),
+     *     @OA\Header(
+     *          header="Vary",
+     *          ref="#/components/headers/vary"
+     *    )
+     * )
+     *
      * @param FilterRequestHandler  $requestHandler
      * @param RepresentationBuilder $representationBuilder
      * @param Request               $request
@@ -84,7 +154,7 @@ class ClientController extends AbstractController
      *
      * @Route({
      *     "en": "/clients"
-     * }, defaults={"isCollection"=true}, name="list_clients", methods={"GET"})
+     * }, defaults={"entityType"=Client::class, "isCollection"=true}, name="list_clients", methods={"GET"})
      *
      * @throws \Exception
      */
@@ -145,6 +215,59 @@ class ClientController extends AbstractController
      *     etag="httpCache.getEtagToken()"
      * )
      *
+     * @OA\Get(
+     *     description="Get client details by uuid as path attribute",
+     *     @OA\Parameter(
+     *          in="path",
+     *          name="uuid",
+     *          description="A client uuid",
+     *          @OA\Schema(
+     *              pattern="[\w-]{36}",
+     *              type="string"
+     *          )
+     *     )
+     * )
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Get client details associated to authenticated partner",
+     *     @OA\MediaType(
+     *          mediaType="application/vnd.hal+json",
+     *          schema=@OA\Schema(
+     *              type="object",
+     *              ref=@ApiDoc\Model(type=Client::class, groups={"Default", "Client_detail"})
+     *          )
+     *     ),
+     *     @OA\Header(
+     *          header="Content-Type",
+     *          ref="#/components/headers/content_type"
+     *     ),
+     *     @OA\Header(
+     *          header="Cache-Control",
+     *          ref="#/components/headers/cache_control"
+     *     ),
+     *     @OA\Header(
+     *          header="Etag",
+     *          ref="#/components/headers/etag"
+     *     ),
+     *     @OA\Header(
+     *          header="Last-Modified",
+     *          ref="#/components/headers/last_modified"
+     *     ),
+     *     @OA\Header(
+     *          header="X-App-Cache-Id",
+     *          ref="#/components/headers/x_cache_id"
+     *     ),
+     *     @OA\Header(
+     *          header="X-App-Cache-Ttl",
+     *          ref="#/components/headers/x_cache_ttl"
+     *     ),
+     *     @OA\Header(
+     *          header="Vary",
+     *          ref="#/components/headers/vary"
+     *    )
+     * )
+     *
      * @param Client    $client
      * @param HTTPCache $httpCache
      *
@@ -189,6 +312,70 @@ class ClientController extends AbstractController
 
     /**
      * Create a new client associated to authenticated partner.
+     *
+     * @OA\Post(
+     *     description="Create a new client entry associated to authenticated partner"
+     * )
+     *
+     * @OA\RequestBody(
+     *     description="Client creation expected data",
+     *     required=true,
+     *     @OA\JsonContent(
+     *          @OA\Property(property="name", type="string", example="Dupont S.A.S"),
+     *          @OA\Property(property="type", type="string", example="Professionnel"),
+     *          @OA\Property(property="email", type="string", example="prestataire-2510@dupont-sas.com")
+     *    )
+     * )
+     *
+     * @OA\Response(
+     *     response=201,
+     *     description="Create a new client associated to selected partner, and link resource with Location header and no resource response content",
+     *     @OA\MediaType(
+     *          mediaType="text/plain",
+     *          schema=@OA\Schema(
+     *              type="string",
+     *              default="",
+     *              example="Empty response returned"
+     *          )
+     *     ),
+     *     @OA\MediaType(
+     *          mediaType="application/json",
+     *          schema=@OA\Schema(
+     *              type="object",
+     *              @OA\Property(property="code", type="integer", example="201"),
+     *              @OA\Property(property="message", type="string", example="Client resource successfully created")
+     *          )
+     *     ),
+     *     @OA\Header(
+     *          header="Location",
+     *          ref="#/components/headers/client_creation_location"
+     *    )
+     * )
+     * @OA\Response(
+     *     response="400 (validation)",
+     *     description="Invalidate data due to request body JSON content with wrong properties values",
+     *     @OA\MediaType(
+     *          mediaType="application/problem+json",
+     *          schema=@OA\Schema(
+     *              @OA\Property(property="code", type="integer", example=400),
+     *              @OA\Property(property="message", type="string", example="Client data validation failure: 3 error(s)"),
+     *              @OA\Property(
+     *                  property="errors",
+     *                  type="object",
+     *                  properties={
+     *                      @OA\Property(property="name", type="string"),
+     *                      @OA\Property(property="type", type="string"),
+     *                      @OA\Property(property="email", type="string")
+     *                  },
+     *                  example={
+     *                      "name"="This value should not be blank.",
+     *                      "type"="The value you selected is not a valid choice.",
+     *                      "email"="This value is not a valid email address."
+     *                  }
+     *              )
+     *         )
+     *     )
+     * )
      *
      * @param FilterRequestHandler  $requestHandler
      * @param Request               $request
@@ -242,9 +429,35 @@ class ClientController extends AbstractController
      *
      * Please note that Symfony param converter is used here to retrieve a Client entity.
      *
+     * @OA\Delete(
+     *     description="Delete a client entry associated to authenticated partner by uuid as path attribute",
+     *     @OA\Parameter(
+     *          in="path",
+     *          name="uuid",
+     *          description="A client uuid",
+     *          @OA\Schema(
+     *              pattern="[\w-]{36}",
+     *              type="string"
+     *          )
+     *     )
+     * )
+     *
+     * @OA\Response(
+     *     response=204,
+     *     description="Delete a client with no response content",
+     *     @OA\MediaType(
+     *          mediaType="text/plain",
+     *          schema=@OA\Schema(
+     *              type="string",
+     *              default="",
+     *              example="Empty response returned"
+     *          )
+     *     )
+     * )
+     *
      * @param Client $client
      *
-     * @ParamConverter("client", converter="doctrine.orm")
+     * @ParamConverter("client", converter="doctrine.cache.custom_converter")
      *
      * @return Response
      *

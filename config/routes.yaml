@@ -1,8 +1,4 @@
-#index:
-#    path: /
-#    controller: App\Controller\DefaultController::index
-
-# Lexik Partner login check route
-api_login_check:
-    path: /api/v1/login/check
-    methods: [POST]
+# Lexik Partner login check route defined in SecurityController to add API documentation
+#lexik_login_check:
+    #path: '/%api_and_version_path_prefix%/login/check' # e.g. /api/v1/login/check
+    #methods: [POST]

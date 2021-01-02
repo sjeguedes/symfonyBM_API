@@ -95,6 +95,8 @@ class Partner implements UserInterface, JWTUserInterface
     /**
      * @var UuidInterface
      *
+     * A universal unique identifier to differentiate a result
+     *
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
      *
@@ -106,6 +108,8 @@ class Partner implements UserInterface, JWTUserInterface
     /**
      * @var string|null
      *
+     * A category
+     *
      * @ORM\Column(type="string", length=45)
      *
      * @Serializer\Groups({"Partner_detail"})
@@ -114,6 +118,8 @@ class Partner implements UserInterface, JWTUserInterface
 
     /**
      * @var string|null
+     *
+     * A particular name (not unique so not used as identifier in app)
      *
      * @ORM\Column(type="string", length=45)
      *
@@ -124,6 +130,8 @@ class Partner implements UserInterface, JWTUserInterface
     /**
      * @var string|null
      *
+     * A unique email used for account
+     *
      * @ORM\Column(type="string", length=320, unique=true)
      *
      * @Serializer\Groups({"Partner_list", "Partner_detail"})
@@ -132,6 +140,8 @@ class Partner implements UserInterface, JWTUserInterface
 
     /**
      * @var string|null
+     *
+     * A hashed password
      *
      * @ORM\Column(type="string", length=98, unique=true)
      *
@@ -147,27 +157,36 @@ class Partner implements UserInterface, JWTUserInterface
     /**
      * @var array
      *
+     * A list of permissions
+     *
      * @ORM\Column(type="array")
      *
      * @Serializer\Groups({"Partner_detail"})
+     * @Serializer\Type("array<string>")
      */
     private $roles;
 
     /**
      * @var \DateTimeImmutable
      *
+     * A date of creation
+     *
      * @ORM\Column(type="datetime_immutable")
      *
      * @Serializer\Groups({"Partner_list", "Partner_detail"})
+     * @Serializer\Type("DateTimeImmutable")
      */
     private $creationDate;
 
     /**
      * @var \DateTimeImmutable
      *
+     * A date of last update (the same as date of creation by default)
+     *
      * @ORM\Column(type="datetime_immutable", nullable=true)
      *
      * @Serializer\Groups({"Partner_detail"})
+     * @Serializer\Type("DateTimeImmutable")
      */
     private $updateDate;
 

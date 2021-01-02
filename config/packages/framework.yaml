@@ -14,3 +14,7 @@ framework:
     #fragments: true
     php_errors:
         log: true
+
+    # Twig assets default directory
+    assets:
+        base_path: 'assets'

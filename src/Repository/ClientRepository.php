@@ -33,11 +33,11 @@ class ClientRepository extends AbstractAPIRepository
      * @param string     $partnerUuid
      * @param array|null $paginationData
      *
-     * @return \IteratorAggregate
+     * @return \IteratorAggregate|null
      *
      * @throws \Psr\Cache\InvalidArgumentException
      */
-    public function findListByPartner(string $partnerUuid, ?array $paginationData): \IteratorAggregate
+    public function findListByPartner(string $partnerUuid, ?array $paginationData): ?\IteratorAggregate
     {
         $queryBuilder = $this->createQueryBuilder('cli')
             ->leftJoin('cli.partner', 'par', 'WITH', 'par.uuid = cli.partner')

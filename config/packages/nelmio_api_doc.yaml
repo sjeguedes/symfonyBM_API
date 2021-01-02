@@ -1,0 +1,460 @@
+nelmio_api_doc:
+    # Allow entity schemas (models) custom names
+    models:
+        names:
+            - { alias: client_list_data, type: App\Entity\Client, groups: [Default, Client_list] }
+            - { alias: client_detail_data, type: App\Entity\Client, groups: [Default, Client_detail] }
+            - { alias: offer_list_data, type: App\Entity\Offer, groups: [Default, Offer_list, Partner_list, Phone_list] }
+            - { alias: offer_detail_data, type: App\Entity\Offer, groups: [Default, Offer_detail] }
+            - { alias: partner_list_data, type: App\Entity\Partner, groups: [Default, Partner_list] }
+            - { alias: partner_detail_data, type: App\Entity\Partner, groups: [Default, Partner_detail] }
+            - { alias: phone_list_data, type: App\Entity\Phone, groups: [Default, Phone_list] }
+            - { alias: phone_detail_data, type: App\Entity\Phone, groups: [Default, Phone_detail] }
+    documentation:
+        info:
+            title: BileMo API
+            description: "Phone store for our partners!"
+            version: 1.0.0
+        components:
+            headers:
+                client_creation_location:
+                    description: "Resource link to view new client details thanks to Location header"
+                    schema:
+                        type: string
+                        format: url
+                content_type:
+                    description: "Resource representation with HAL HATEOAS data: JSON format application/hal+json"
+                    schema:
+                        type: string
+                cache_control:
+                    description: "Resource cache expiration format with max-age, must/proxy-revalidate and public values"
+                    schema:
+                        type: string
+                etag:
+                    description: "Resource cache validation with custom token"
+                    schema:
+                        type: string
+                last_modified:
+                    description: "Resource cache validation with last date of update"
+                    schema:
+                        type: string
+                x_cache_id:
+                    description: "Resource cache uuid stored thanks to this custom header"
+                    schema:
+                        type: string
+                x_cache_ttl:
+                    description: "Resource cache expiration max-age value stored thanks to this custom header"
+                    schema:
+                        type: integer
+                vary:
+                    description: "Resource cache differentiation with two keys: Authorization Bearer and X-App-Cache-Id headers"
+                    schema:
+                        type: string
+            responses:
+                jwt_bad_request:
+                    description: "Unexpected/malformed request body content JSON string"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_jwt_error_400"
+                bad_request:
+                    description: "Wrong path and/or query parameter(s) used, or unexpected/malformed request body content JSON string"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_error_400"
+                jwt_unauthorized:
+                    description: "Invalid credentials"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_jwt_error_401"
+                jwt_refresh_unauthorized:
+                    description: "Invalid JWT refresh token"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_jwt_refresh_error_401"
+                unauthorized:
+                    description: "Expired, invalid or not found JWT token"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_error_401"
+                forbidden:
+                    description: "Action not allowed depending on partner permissions"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_error_403"
+                not_found:
+                    description: "No corresponding URI found"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_error_404"
+                internal:
+                    description: "Unexpected technical error"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_error_500"
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
+            schemas:
+                # Resources (look at models configuration)
+                client_list_data:
+                    description: "API client list JSON schema"
+                client_detail_data:
+                    description: "API client details JSON schema"
+                offer_list_data:
+                    description: "API offer list JSON schema"
+                offer_detail_data:
+                    description: "API offer details JSON schema"
+                partner_detail_data:
+                    description: "API partner details JSON schema"
+                phone_list_data:
+                    description: "API phone list JSON schema"
+                phone_detail_data:
+                    description: "API phone details JSON schema"
+                # Errors
+                api_jwt_error_400:
+                    description: "API JWT error 400 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 400
+                        message:
+                            type: string
+                            example: Bad request body content
+                api_error_400:
+                    description: "API error 400 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 400
+                        message:
+                            type: string
+                            example: Bad request
+                api_jwt_error_401:
+                    description: "API JWT error 401 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 401
+                        message:
+                            type: string
+                            example: Invalid account credentials
+                api_jwt_refresh_error_401:
+                    description: "API JWT refresh token error 401 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 401
+                        message:
+                            type: string
+                            example: Invalid refresh token
+                api_error_401:
+                    description: "API error 401 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 401
+                        message:
+                            type: string
+                            example: Invalid (or Expired) JWT Token
+                api_error_403:
+                    description: "API error 403 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 403
+                        message:
+                            type: string
+                            example: Access denied
+                api_error_404:
+                    description: "API error 404 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 404
+                        message:
+                            type: string
+                            example: Request not found
+                api_error_500:
+                    description: "API error 500 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 500
+                        message:
+                            type: string
+                            example: Technical error
+                # Collections
+                # example to represent them: https://opensource.zalando.com/restful-api-guidelines/#link-relation-fields
+                ## Client list
+                paginated_client_collection:
+                    description: "API paginated client collection JSON schema"
+                    type: object
+                    properties:
+                        page:
+                            description: "A page number to retrieve a particular set of clients"
+                            type: integer
+                        per_page:
+                            description: "A limit in order to define how many clients to show per page"
+                            type: integer
+                        pages:
+                            description: "The total page size (number) of sets"
+                            type: integer
+                        total:
+                            description: "The total client collection items size (number)"
+                            type: integer
+                        _links:
+                            description: "A set of links to reach client list data thanks to pagination"
+                            type: object
+                            properties:
+                                self:
+                                    description: "A link to reach current set of data"
+                                    type: string
+                                first:
+                                    description: "A link to reach first set of data"
+                                    type: string
+                                last:
+                                    description: "A link to reach last set of data"
+                                    type: string
+                                next:
+                                    description: "A link to reach next set of data"
+                                    type: string
+                                previous:
+                                    description: "A link to reach previous set of data"
+                                    type: string
+                        _embedded:
+                            description: "An array of client collection items"
+                            type: object
+                            properties:
+                                clients:
+                                    type: array
+                                    items:
+                                        $ref: "#/components/schemas/client_list_data"
+                ## Offer list
+                paginated_offer_collection:
+                    description: "API paginated offer collection JSON schema"
+                    type: object
+                    properties:
+                        page:
+                            description: "A page number to retrieve a particular set of offers"
+                            type: integer
+                        per_page:
+                            description: "A limit in order to define how many offers to show per page"
+                            type: integer
+                        pages:
+                            description: "The total page size (number) of sets"
+                            type: integer
+                        total:
+                            description: "The total offer collection items size (number)"
+                            type: integer
+                        _links:
+                            description: "A set of links to reach offer list data thanks to pagination"
+                            type: object
+                            properties:
+                                self:
+                                    description: "A link to reach current set of data"
+                                    type: string
+                                first:
+                                    description: "A link to reach first set of data"
+                                    type: string
+                                last:
+                                    description: "A link to reach last set of data"
+                                    type: string
+                                next:
+                                    description: "A link to reach next set of data"
+                                    type: string
+                                previous:
+                                    description: "A link to reach previous set of data"
+                                    type: string
+                        _embedded:
+                            description: "An array of offer collection items"
+                            type: object
+                            properties:
+                                offers:
+                                    type: array
+                                    items:
+                                        $ref: "#/components/schemas/offer_list_data"
+                ## Partner list
+                paginated_partner_collection:
+                    description: "API paginated partner collection JSON schema"
+                    type: object
+                    properties:
+                        page:
+                            description: "A page number to retrieve a particular set of partners"
+                            type: integer
+                        per_page:
+                            description: "A limit in order to define how many partners to show per page"
+                            type: integer
+                        pages:
+                            description: "The total page size (number) of sets"
+                            type: integer
+                        total:
+                            description: "The total partner collection items size (number)"
+                            type: integer
+                        _links:
+                            description: "A set of links to reach partner list data thanks to pagination"
+                            type: object
+                            properties:
+                                self:
+                                    description: "A link to reach current set of data"
+                                    type: string
+                                first:
+                                    description: "A link to reach first set of data"
+                                    type: string
+                                last:
+                                    description: "A link to reach last set of data"
+                                    type: string
+                                next:
+                                    description: "A link to reach next set of data"
+                                    type: string
+                                previous:
+                                    description: "A link to reach previous set of data"
+                                    type: string
+                        _embedded:
+                            description: "An array of partner collection items"
+                            type: object
+                            properties:
+                                partners:
+                                    type: array
+                                    items:
+                                        $ref: "#/components/schemas/partner_list_data"
+                ## Phone list
+                paginated_phone_collection:
+                    description: "API paginated phone collection JSON schema"
+                    type: object
+                    properties:
+                        page:
+                            description: "A page number to retrieve a particular set of phones"
+                            type: integer
+                        per_page:
+                            description: "A limit in order to define how many phones to show per page"
+                            type: integer
+                        pages:
+                            description: "The total page size (number) of sets"
+                            type: integer
+                        total:
+                            description: "The total phone collection items size (number)"
+                            type: integer
+                        _links:
+                            description: "A set of links to reach phone list data thanks to pagination"
+                            type: object
+                            properties:
+                                self:
+                                    description: "A link to reach current set of data"
+                                    type: string
+                                first:
+                                    description: "A link to reach first set of data"
+                                    type: string
+                                last:
+                                    description: "A link to reach last set of data"
+                                    type: string
+                                next:
+                                    description: "A link to reach next set of data"
+                                    type: string
+                                previous:
+                                    description: "A link to reach previous set of data"
+                                    type: string
+                        _embedded:
+                            description: "An array of phone collection items"
+                            type: object
+                            properties:
+                                phones:
+                                    type: array
+                                    items:
+                                        $ref: "#/components/schemas/phone_list_data"
+        security:
+            - Bearer: []
+        servers:
+            - url: '%api_doc_server_url%'
+              description: API version 1.0.0 server access
+    # Filter documented areas
+    areas:
+        default: # for partner (default or consumer)
+            path_patterns: &default_path_patterns
+                # Accepts routes not under /api/v1/specification/{area} or /api/v1/{area}
+                # or /api/v1/default or /api/v1/consumer
+                # which contain "doc" optionally.
+                - ^/api/v\d+/(?!(admin|(specification/)?\{[\w-]+\}|default|consumer)(/doc$)?)
+                - ^/api/v\d+/specification/(default|consumer)-doc.json # list also path to JSON file
+                - ^/api/v\d+/login/check # list login check
+                - ^/api/v\d+/token/refresh # list token refresh
+            documentation:
+                tags: &default_documentation_tags # tags sort order (sections) and selection for this area
+                    - name: OpenAPI Documentation
+                      description: API current specification JSON file
+                    - name: Login - Authentication
+                      description: API security process
+                    - name: Partner requests to manage his own data
+                      description: API authenticated partner data
+                    - name: Partner requests to manage his own client(s)
+                      description: API authenticated partner associated client(s) data
+                    - name: Partner requests to manage his own phone(s) or catalog
+                      description: API authenticated partner associated phones(s) or all available references data
+                paths:
+                    '/%api_and_version_path_prefix%/specification/default-doc.json': # add default spec. for json file
+                        get: &default_path_documentation_spec
+                            summary: Get OpenAPI current JSON file.
+                            tags:
+                                - OpenAPI Documentation
+                            security: [] # No security
+                            responses:
+                                200: # Response
+                                    description: Get JSON specification data
+                                    content: # Response body
+                                        application/json: # https://swagger.io/docs/specification/media-types
+
+        consumer: # for consumer: import default configuration to use "consumer" area name
+            path_patterns: *default_path_patterns
+            documentation:
+                tags: *default_documentation_tags
+                paths:
+                    '/%api_and_version_path_prefix%/specification/consumer-doc.json': # add spec. for json file
+                        get: *default_path_documentation_spec
+
+        administrator: # for admin
+            path_patterns:
+                # Accepts routes under /api/v1/admin
+                # and not under /api/v1/ which contain "doc" optionally.
+                - ^/api/v\d+/admin # list paths prefixed with admin: /api/v1/admin
+                - ^/api/v\d+/(?!(\{[\w-]+\}|[\w-]+)(/doc$)?)
+                - ^/api/v\d+/specification/administrator-doc.json # list also path to JSON file
+                - ^/api/v\d+/login/check # list login check
+                - ^/api/v\d+/token/refresh # list token refresh
+            documentation:
+                tags: # tags sort order (sections) and selection for this area
+                    - name: OpenAPI Documentation
+                      description: API specification JSON file
+                    - name: Login - Authentication
+                      description: API security process
+                    - name: Administrator requests on registered partner(s)
+                      description: API Admin requests (Partner with extended permissions)
+                                   to manage all consumers (as Partner) data
+                    - name: Administrator requests on partner client(s)
+                      description: API Admin requests (Partner with extended permissions)
+                                   to manage selected partner client(s)
+                    - name: Administrator requests on offer(s)
+                      description: API Admin requests (Partner with extended permissions)
+                                   to manage offer(s) with different approaches
+                    - name: Administrator requests on partner phone(s)
+                      description: API Admin requests (Partner with extended permissions)
+                                   to manage partner phone(s)
+                paths:
+                    '/%api_and_version_path_prefix%/specification/administrator-doc.json': # add spec. for json file
+                        get: *default_path_documentation_spec

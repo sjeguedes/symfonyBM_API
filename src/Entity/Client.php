@@ -77,6 +77,8 @@ class Client
     /**
      * @var UuidInterface
      *
+     * A universal unique identifier to differentiate a result
+     *
      * @ORM\Id()
      * @ORM\Column(type="uuid", unique=true)
      *
@@ -88,6 +90,8 @@ class Client
     /**
      * @var string|null
      *
+     * A category
+     *
      * @ORM\Column(type="string", length=45)
      *
      * @Serializer\Groups({"Client_detail"})
@@ -97,6 +101,8 @@ class Client
     /**
      * @var string|null
      *
+     * A particular name (not unique so not used as identifier in app)
+     *
      * @ORM\Column(type="string", length=45)
      *
      * @Serializer\Groups({"Client_list", "Client_detail"})
@@ -105,6 +111,8 @@ class Client
 
     /**
      * @var string|null
+     *
+     * A unique email to distinguish client
      *
      * @ORM\Column(type="string", length=320, unique=true)
      *
@@ -125,18 +133,24 @@ class Client
     /**
      * @var \DateTimeImmutable
      *
+     * A date of creation
+     *
      * @ORM\Column(type="datetime_immutable")
      *
      * @Serializer\Groups({"Client_list", "Client_detail"})
+     * @Serializer\Type("DateTimeImmutable")
      */
     private $creationDate;
 
     /**
      * @var \DateTimeImmutable
      *
+     * A date of last update (the same as date of creation by default)
+     *
      * @ORM\Column(type="datetime_immutable", nullable=true)
      *
      * @Serializer\Groups({"Client_detail"})
+     * @Serializer\Type("DateTimeImmutable")
      */
     private $updateDate;
 

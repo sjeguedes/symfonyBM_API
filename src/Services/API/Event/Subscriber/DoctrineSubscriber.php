@@ -11,18 +11,12 @@ use App\Entity\Partner;
 use App\Entity\Phone;
 use App\Repository\AbstractAPIRepository;
 use App\Repository\HTTPCacheRepository;
-use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\Common\EventSubscriber;
-use Doctrine\ORM\Cache;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
-use Psr\Cache\CacheItemInterface;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Cache\Adapter\DoctrineAdapter;
-use Symfony\Component\Cache\CacheItem;
-use Symfony\Contracts\Cache\CacheInterface;
-use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
@@ -56,11 +50,6 @@ class DoctrineSubscriber implements EventSubscriber
      * @var TagAwareCacheInterface
      */
     private $cache;
-
-    /**
-     * @var CacheProvider
-     */
-    private $cacheAdapter;
 
     /**
      * DoctrineSubscriber constructor.
@@ -216,9 +205,9 @@ class DoctrineSubscriber implements EventSubscriber
                 case HTTPCache::RESOURCE_TYPES['unique']:
                     // Get possible entry based on request URI which corresponds to involved entity
                     $requestURI = $httpCache->getRequestUri();
-                    preg_match('/\/([\w-]{36})(\?[\w-&=]+)?$/', $requestURI, $matches, PREG_UNMATCHED_AS_NULL);
+                    preg_match('/\/([\w-]{36})(\?[\w-&=]+)?$/', $requestURI, $matches);
                     // This result matches involved entity!
-                    if (!\is_null($matches[1]) && $entityUuid->toString() === $matches[1]) {
+                    if (isset($matches[1]) && $entityUuid->toString() === $matches[1]) {
                         // Modify these properties to change "Last-Modified" and "Etag" headers values later in controller
                         $httpCache->setUpdateDate(new \DateTimeImmutable());
                         $httpCache->setEtagToken($httpCache->getUpdateDate());

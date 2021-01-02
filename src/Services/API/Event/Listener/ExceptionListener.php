@@ -11,6 +11,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
@@ -66,20 +67,26 @@ class ExceptionListener
         $statusCode = $exception instanceof HttpException
             ? $exception->getStatusCode() : Response::HTTP_INTERNAL_SERVER_ERROR;
         // Adapt response message
+
         switch ($statusCode) {
             case Response::HTTP_BAD_REQUEST: // 400
             case Response::HTTP_FORBIDDEN: // 403
-                $message = $exception->getMessage();
+                $message = $exception->getMessage(); // keep original message
                 break;
             case Response::HTTP_NOT_FOUND: // 404
                 $message = 'Requested URI not found: please check path and parameters type or value.';
                 break;
             case Response::HTTP_INTERNAL_SERVER_ERROR: // 500
                 $message = 'Technical error: please contact us if necessary!';
+                // Allow Voter security exception from controllers
+                if ($exception instanceof AccessDeniedException) {
+                    $statusCode = Response::HTTP_FORBIDDEN; // redefine status code to 403
+                    $message = $exception->getMessage(); // keep original message
+                }
                 // Allow JMS (de)serialization exception messages
                 if ($exception instanceof RuntimeException) {
-                    $statusCode = Response::HTTP_BAD_REQUEST;
-                    $message = $exception->getMessage();
+                    $statusCode = Response::HTTP_BAD_REQUEST; // redefine status code to 400
+                    $message = $exception->getMessage(); // keep original message
                 }
                 break;
             default:

@@ -144,7 +144,7 @@ final class ResponseBuilder
             'X-App-Cache-Ttl' => $httpCache->getTtlExpiration(),
             'X-App-Cache-Id'  => $httpCache->getUuid()->toString(),
             // CAUTION: "Authorization" header must (not sure about this!) be precised to keep stateless process active!
-            'Vary'            => ['Authorization', 'X-App-Cache']
+            'Vary'            => ['Authorization', 'X-App-Cache-Id']
         ];
         // Merge and make final array with unique entries
         return array_unique(array_merge($defaultCustomCacheHeaders, $customHeaders, $headers), SORT_REGULAR);

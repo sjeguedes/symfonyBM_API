@@ -5,6 +5,8 @@
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
     api_and_version_path_prefix: 'api/v1'
+    api_doc_server_url: '%env(API_DOC_SERVER_URL)%'
+    api_doc_server_url_with_prefix: '%api_doc_server_url%/%api_and_version_path_prefix%'
     api_doctrine_cache_directory_path: '%kernel.cache_dir%/doctrine/app_cache'
 
 services:
@@ -65,6 +67,11 @@ services:
             $tokenExtractor: '@lexik_jwt_authentication.extractor.authorization_header_extractor'
         tags:
             - { name: request.param_converter, converter: http.cache.custom_converter, priority: 0 }
+
+    # add a Gesdinet listener to delete all invalid refresh tokens (when a new JWT refresh token is created)
+    App\Services\Gesdinet\Event\Listener\RefreshedTokenListener:
+        tags:
+            - { name: kernel.event_listener, event: gesdinet.refresh_token, method: onTokenRefreshed }
 
     # add JMS event subscriber for hateoas collection representation
     App\Services\Hateoas\Event\Subscriber\CollectionRepresentationSubscriber:

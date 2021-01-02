@@ -31,9 +31,28 @@ class PartnerRepository extends AbstractAPIRepository implements UserLoaderInter
     /**
      * {@inheritdoc}
      */
-    public function findListByPartner(string $partnerUuid, ?array $paginationData): \IteratorAggregate
+    public function findListByPartner(string $partnerUuid, ?array $paginationData): ?\IteratorAggregate
     {
         // Not necessary for this repository
+        return null;
+    }
+
+    /**
+     * Find a single Partner instance by email.
+     *
+     * @param string $email
+     *
+     * @return Partner|null
+     *
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function findOneByEmail(string $email): ?Partner
+    {
+        return $this->createQueryBuilder('par')
+            ->where('par.email = ?1')
+            ->getQuery()
+            ->setParameter(1, $email)
+            ->getOneOrNullResult();
     }
 
     /**

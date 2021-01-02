@@ -326,7 +326,7 @@ class HTTPCache
     public function setEtagToken(\DateTimeImmutable $updateDate): self
     {
         // Quotation marks are necessary to respect Etag format
-        $this->etagToken = $this->generateUniqueEtag($updateDate) . '"';
+        $this->etagToken = $this->generateUniqueEtag($updateDate);
 
         return $this;
     }

@@ -1,0 +1,28 @@
+# https://symfony.com/doc/4.x/bundles/NelmioApiDocBundle/areas.html
+
+## Nelmio API Doc areas configuration
+## Expose documentation as JSON swagger compliant
+app.swagger.areas:
+    path: '/%api_and_version_path_prefix%/specification/{area}-doc.json' # e.g. /api/v1/specification/administrator-doc.jon
+    methods: GET
+    defaults: { _controller: nelmio_api_doc.controller.swagger }
+
+## Requires the Asset component and the Twig bundle
+## $ composer require twig asset
+app.swagger_ui:
+    path: '/%api_and_version_path_prefix%/{area}/doc' # e.g. /api/v1/admin/doc
+    methods: GET
+    defaults: { _controller: nelmio_api_doc.controller.swagger_ui }
+
+app.swagger:
+    path: '/%api_and_version_path_prefix%/consumer/doc'
+    controller: nelmio_api_doc.controller.swagger_ui
+
+## Custom app default redirection
+# e.g. /api/v1/doc -> is redirected to /api/v1/default/doc -> which is redirected to /api/v1/consumer/doc thanks to this above
+app.swagger_ui.default:
+    path: '/%api_and_version_path_prefix%/default/doc'
+    controller: Symfony\Bundle\FrameworkBundle\Controller\RedirectController
+    defaults:
+        path: '/%api_and_version_path_prefix%/consumer/doc'
+        permanent: true
