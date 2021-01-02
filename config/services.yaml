@@ -68,6 +68,11 @@ services:
         tags:
             - { name: request.param_converter, converter: http.cache.custom_converter, priority: 0 }
 
+    # add a Gesdinet listener to delete all invalid refresh tokens (when a new JWT refresh token is created)
+    App\Services\Gesdinet\Event\Listener\RefreshedTokenListener:
+        tags:
+            - { name: kernel.event_listener, event: gesdinet.refresh_token, method: onTokenRefreshed }
+
     # add JMS event subscriber for hateoas collection representation
     App\Services\Hateoas\Event\Subscriber\CollectionRepresentationSubscriber:
         tags:
