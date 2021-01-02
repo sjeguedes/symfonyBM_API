@@ -1,0 +1,6 @@
+gesdinet_jwt_refresh_token:
+    refresh_token_class: App\Entity\JWTRefreshToken # entity to configure in order to store refresh token
+    single_use: true # Token can only be used once!
+    ttl: 86400 # 1 day
+    user_identity_field: email # property to use as username
+    user_provider: security.user.provider.concrete.partner_api_account # user provider which is used

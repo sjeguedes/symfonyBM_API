@@ -69,6 +69,12 @@ nelmio_api_doc:
                         application/problem+json:
                             schema:
                                 $ref: "#/components/schemas/api_jwt_error_401"
+                jwt_refresh_unauthorized:
+                    description: "Invalid JWT refresh token"
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: "#/components/schemas/api_jwt_refresh_error_401"
                 unauthorized:
                     description: "Expired, invalid or not found JWT token"
                     content:
@@ -145,6 +151,16 @@ nelmio_api_doc:
                         message:
                             type: string
                             example: Invalid account credentials
+                api_jwt_refresh_error_401:
+                    description: "API JWT refresh token error 401 JSON schema"
+                    type: object
+                    properties:
+                        code:
+                            type: integer
+                            example: 401
+                        message:
+                            type: string
+                            example: Invalid refresh token
                 api_error_401:
                     description: "API error 401 JSON schema"
                     type: object
@@ -378,6 +394,7 @@ nelmio_api_doc:
                 - ^/api/v\d+/(?!(admin|(specification/)?\{[\w-]+\}|default|consumer)(/doc$)?)
                 - ^/api/v\d+/specification/(default|consumer)-doc.json # list also path to JSON file
                 - ^/api/v\d+/login/check # list login check
+                - ^/api/v\d+/token/refresh # list token refresh
             documentation:
                 tags: &default_documentation_tags # tags sort order (sections) and selection for this area
                     - name: OpenAPI Documentation
@@ -419,6 +436,7 @@ nelmio_api_doc:
                 - ^/api/v\d+/(?!(\{[\w-]+\}|[\w-]+)(/doc$)?)
                 - ^/api/v\d+/specification/administrator-doc.json # list also path to JSON file
                 - ^/api/v\d+/login/check # list login check
+                - ^/api/v\d+/token/refresh # list token refresh
             documentation:
                 tags: # tags sort order (sections) and selection for this area
                     - name: OpenAPI Documentation
