@@ -27,8 +27,8 @@ class PhoneControllerTest extends AbstractControllerTest
     {
         $phone_uuid = self::DEFAULT_DATA['consumer']['phone_uuid'];
         return [
-            'List phones'  => ['GET', '/phones'],
-            'Show phone'   => ['GET', '/phones/' . $phone_uuid]
+            'List phones' => ['GET', '/phones'],
+            'Show phone'  => ['GET', '/phones/' . $phone_uuid]
         ];
     }
 
@@ -63,7 +63,7 @@ class PhoneControllerTest extends AbstractControllerTest
         static::assertTrue($this->client->getResponse()->isSuccessful());
         // Check HAL HATEOAS response content type
         static::assertResponseHeaderSame('Content-Type', 'application/hal+json');
-        // Check that default authenticated consumer (partner) has exactly 1 client!
+        // Check that default authenticated consumer (partner) has exactly 1 phone!
         $content = json_decode($this->client->getResponse()->getContent(), true);
         static::assertArrayHasKey('phones', $content['_embedded']);
         static::assertCount(1, $content['_embedded']['phones']);
