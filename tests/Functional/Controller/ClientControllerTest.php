@@ -19,7 +19,7 @@ class ClientControllerTest extends AbstractControllerTest
      */
     private const DEFAULT_DATA = [
         'admin'    => ['client_uuid' => 'f504057b-0283-3c79-a0ee-6ba70de10945'],
-        'consumer' => ['client_uuid' => '1e5dba60-ccb3-30e5-8e88-2cbccfa31e4a'],
+        'consumer' => ['client_uuid' => '1e5dba60-ccb3-30e5-8e88-2cbccfa31e4a']
     ];
 
     /**
@@ -225,6 +225,12 @@ class ClientControllerTest extends AbstractControllerTest
         $content = json_decode($this->client->getResponse()->getContent(), true);
         static::assertArrayHasKey('clients', $content['_embedded']);
         static::assertCount(2, $content['_embedded']['clients']);
+        // Check serialization on first result
+        static::assertArrayHasKey('uuid', $content['_embedded']['clients'][0]);
+        static::assertArrayHasKey('name', $content['_embedded']['clients'][0]);
+        static::assertArrayHasKey('email', $content['_embedded']['clients'][0]);
+        static::assertArrayHasKey('creation_date', $content['_embedded']['clients'][0]);
+        static::assertArrayHasKey('_links', $content['_embedded']['clients'][0]);
     }
 
     /**
@@ -297,11 +303,19 @@ class ClientControllerTest extends AbstractControllerTest
     public function testConsumerCanShowOneOfHisClients(): void
     {
         $this->client->request('GET', '/clients/' . self::DEFAULT_DATA['consumer']['client_uuid']);
-        $content = json_decode($this->client->getResponse()->getContent(), true);
         // Response with status code "200" assertion
         static::assertTrue($this->client->getResponse()->isSuccessful());
         // Check HAL HATEOAS response content type
         static::assertResponseHeaderSame('Content-Type', 'application/hal+json');
+        // Check serialization
+        $content = json_decode($this->client->getResponse()->getContent(), true);
+        static::assertArrayHasKey('uuid', $content);
+        static::assertArrayHasKey('type', $content);
+        static::assertArrayHasKey('name', $content);
+        static::assertArrayHasKey('email', $content);
+        static::assertArrayHasKey('creation_date', $content);
+        static::assertArrayHasKey('update_date', $content);
+        static::assertArrayHasKey('_links', $content);
     }
 
     /**
