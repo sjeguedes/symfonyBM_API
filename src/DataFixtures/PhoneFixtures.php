@@ -45,8 +45,8 @@ class PhoneFixtures extends BaseFixture
                 $phoneStorage = $this->getCustomFakerProvider()->customPhoneStorage($phoneType);
                 // Adjust phone model with phone storage
                 $phoneModel = $phoneModel  . ' ' . $phoneStorage;
-                $Phone = new Phone();
-                return $Phone
+                $phone = new Phone();
+                return $phone
                     ->setCreationDate(new \DateTimeImmutable(sprintf("+%d days", -$i)))
                     ->setUpdateDate(new \DateTimeImmutable(sprintf("+%d days", -$i)))
                     ->setType($phoneType)

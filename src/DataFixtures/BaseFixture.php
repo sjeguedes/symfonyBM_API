@@ -35,6 +35,7 @@ abstract class BaseFixture extends Fixture
     {
         // Get a Faker instance for french data
         $this->faker = Faker\Factory::create('fr_FR');
+        $this->faker->seed(2020);
         // Add app custom provider
         $this->faker->addProvider(new DataProvider($this->faker));
     }
@@ -109,7 +110,7 @@ abstract class BaseFixture extends Fixture
     {
         $generatorProviders = $this->faker->getProviders();
         foreach ($generatorProviders as $provider) {
-            if (1 !== preg_match('/^App\\\\Services\\\\Faker\\\\Provider.*/', \get_class($provider))) {
+            if (1 === preg_match('/^App\\\\Services\\\\Faker\\\\Provider.*/', \get_class($provider))) {
                 return $provider;
             }
         }

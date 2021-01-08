@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\API\Event\Listener;
 
+use App\Repository\AbstractAPIRepository;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -73,6 +74,11 @@ final class RequestListener
             throw new BadRequestHttpException(
                 sprintf('Invalid request: unknown (%s) query parameter(s)', $wrongParameters)
             );
+        }
+        // At this time, if filters are used on request which is not a collection list throw a custom exception
+        $isCollection = true === $request->attributes->get('isCollection');
+        if (0 !== count($request->query->keys()) && !$isCollection) {
+            throw new BadRequestHttpException('Misused filter(s) without collection: unexpected request query parameter(s)');
         }
     }
 }
