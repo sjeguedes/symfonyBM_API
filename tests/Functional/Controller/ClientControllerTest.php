@@ -18,8 +18,8 @@ class ClientControllerTest extends AbstractControllerTest
      * Define API default clients data for all common tests.
      */
     private const DEFAULT_DATA = [
-        'admin'    => ['client_uuid' => 'f504057b-0283-3c79-a0ee-6ba70de10945'],
-        'consumer' => ['client_uuid' => '1e5dba60-ccb3-30e5-8e88-2cbccfa31e4a']
+        'admin'    => ['client_uuid' => 'af6d57b5-ba0d-39d1-ba1a-4c17a14f6ba8'],
+        'consumer' => ['client_uuid' => '1c8567f4-bee1-376a-8b57-2567b6c9ed5e']
     ];
 
     /**
@@ -45,12 +45,12 @@ class ClientControllerTest extends AbstractControllerTest
      */
     public function provideCorrectURIs(): array
     {
-        $client_uuid = self::DEFAULT_DATA['consumer']['client_uuid'];
+        $clientUuid = self::DEFAULT_DATA['consumer']['client_uuid'];
         return [
             'List clients'  => ['GET', '/clients'],
-            'Show client'   => ['GET', '/clients/' . $client_uuid],
+            'Show client'   => ['GET', '/clients/' . $clientUuid],
             'Create client' => ['POST', '/clients'],
-            'Delete client' => ['DELETE', '/clients/' . $client_uuid]
+            'Delete client' => ['DELETE', '/clients/' . $clientUuid]
         ];
     }
 
@@ -61,11 +61,11 @@ class ClientControllerTest extends AbstractControllerTest
      */
     public function provideWrongURIs(): array
     {
-        $client_uuid = self::DEFAULT_DATA['consumer']['client_uuid'];
+        $clientUuid = self::DEFAULT_DATA['consumer']['client_uuid'];
         return [
             'List clients with wrong URI'                 => ['GET', '/clients/list'],
-            'Show client with wrong URI'                  => ['GET', '/client/' . $client_uuid],
-            'Show client with misused collection filters' => ['GET', '/clients/' . $client_uuid . '?page=2&per_page=5'],
+            'Show client with wrong URI'                  => ['GET', '/client/' . $clientUuid],
+            'Show client with misused collection filters' => ['GET', '/clients/' . $clientUuid . '?page=2&per_page=5'],
             'Delete client without uuid'                  => ['POST', '/clients/3'],
             'Delete client with no corresponding uuid'    => ['DELETE', '/clients/0a3ecd72-3994-4d00-bd16-ec0fb7c04e22']
         ];
@@ -365,6 +365,8 @@ class ClientControllerTest extends AbstractControllerTest
         // Check link to new resource in "Location" header
         static::assertRegExp('/' . $pattern . '/', $locationHeader);
         static::assertResponseStatusCodeSame(201);
+        $content = json_decode($this->client->getResponse()->getContent(), true);
+        static::assertSame('Client resource successfully created', $content['message']);
     }
 
     /**
@@ -420,9 +422,9 @@ class ClientControllerTest extends AbstractControllerTest
         $this->initDefaultAuthenticatedClient(true);
         // Call repository to get data for client created before in test in order to delete it here!
         $lastCreatedClientEntity = $this->clientRepository->findOneBy(['email' => 'dupont-a743@gmail.com']);
+        $clientUuid = $lastCreatedClientEntity->getUuid()->toString();
         // Use consumer client uuid
-        $this->client->request('DELETE','/clients/' . $lastCreatedClientEntity->getUuid()->toString());
-        //$this->client->request('DELETE','/clients/' . self::DEFAULT_DATA['consumer']['client_uuid']);
+        $this->client->request('DELETE','/clients/' . $clientUuid);
         // Check empty response
         static::assertEmpty($this->client->getResponse()->getContent());
         static::assertResponseNotHasHeader('Content-Type');

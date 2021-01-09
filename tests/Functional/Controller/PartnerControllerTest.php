@@ -15,7 +15,7 @@ class PartnerControllerTest extends AbstractControllerTest
      * Define API default partners data for all common tests.
      */
     private const DEFAULT_DATA = [
-        'consumer' => ['uuid' => 'ad7da746-2553-4ea4-a3f2-a1fd962a09ef']
+        'consumer' => ['uuid' => '14da0978-5078-399d-885c-263bdaacc6f3']
     ];
 
     /**

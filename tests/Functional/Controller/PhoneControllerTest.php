@@ -15,7 +15,7 @@ class PhoneControllerTest extends AbstractControllerTest
      * Define API default phones data for all common tests.
      */
     private const DEFAULT_DATA = [
-        'consumer' => ['phone_uuid' => '7b1e0756-15cc-4e4a-ae56-64c409cdedc8']
+        'consumer' => ['phone_uuid' => 'ff3988e0-8fc3-3ec0-b4d1-57051b4c6cab']
     ];
 
     /**
@@ -25,10 +25,10 @@ class PhoneControllerTest extends AbstractControllerTest
      */
     public function provideCorrectURIs(): array
     {
-        $phone_uuid = self::DEFAULT_DATA['consumer']['phone_uuid'];
+        $phoneUuid = self::DEFAULT_DATA['consumer']['phone_uuid'];
         return [
             'List phones' => ['GET', '/phones'],
-            'Show phone'  => ['GET', '/phones/' . $phone_uuid]
+            'Show phone'  => ['GET', '/phones/' . $phoneUuid]
         ];
     }
 
@@ -66,7 +66,7 @@ class PhoneControllerTest extends AbstractControllerTest
         // Check that default authenticated consumer (partner) has exactly 1 phone!
         $content = json_decode($this->client->getResponse()->getContent(), true);
         static::assertArrayHasKey('phones', $content['_embedded']);
-        static::assertCount(1, $content['_embedded']['phones']);
+        static::assertCount(2, $content['_embedded']['phones']);
         // Check serialization on first result
         static::assertArrayHasKey('uuid', $content['_embedded']['phones'][0]);
         static::assertArrayHasKey('brand', $content['_embedded']['phones'][0]);

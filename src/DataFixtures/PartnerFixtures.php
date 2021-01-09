@@ -8,6 +8,7 @@ use App\Services\Faker\Provider\DataProvider;
 use App\Entity\Partner;
 use Doctrine\Persistence\ObjectManager;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 /**
@@ -20,7 +21,7 @@ class PartnerFixtures extends BaseFixture
     /**
      * Define log state to look at generated partner credentials.
      */
-    const LOG_PARTNER_CREDENTIALS = false;
+    const LOG_PARTNER_CREDENTIALS = true;
 
     /**
      * @var UserPasswordEncoderInterface
@@ -72,7 +73,7 @@ class PartnerFixtures extends BaseFixture
                 $partnerRoles = [Partner::DEFAULT_PARTNER_ROLE];
                 // add admin role for first created partner (corresponds to rank "11")
                 11 !== (int) ($index . ($i + 1)) ?: $partnerRoles[] = Partner::API_ADMIN_ROLE;
-                $partner = new Partner();
+                $partner = new Partner(Uuid::fromString($this->faker->uuid));
                 // Get partner credentials information with log
                 !self::LOG_PARTNER_CREDENTIALS ?: $this->logPartnerCredentials($index, $i, $partnerEmail);
                 // Get partner password

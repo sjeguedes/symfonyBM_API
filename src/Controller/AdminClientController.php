@@ -385,7 +385,7 @@ class AdminClientController extends AbstractAPIController
     {
         // Check coherent pair of associated entities
         if (!$partner->getClients()->contains($client)) {
-            throw new BadRequestHttpException('Selected Client to remove not associated to chosen Partner');
+            throw new BadRequestHttpException('Selected Client to remove unassociated to chosen Partner');
         }
         // Get partner to match client to remove and save deletion
         $partner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);
