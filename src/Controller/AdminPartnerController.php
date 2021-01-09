@@ -9,8 +9,8 @@ use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
-use Nelmio\ApiDocBundle\Annotation as ApiDoc;
 use OpenApi\Annotations as OA;
+use Ramsey\Uuid\UuidInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
@@ -162,9 +162,11 @@ class AdminPartnerController extends AbstractAPIController
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $partnerRepository = $this->getDoctrine()->getRepository(Partner::class);
+        /** @var UuidInterface $AuthenticatedAdminPartnerUuid */
+        $AuthenticatedAdminPartnerUuid = $this->getUser()->getUuid();
         // Get complete list with possible paginated results
         $partners = $partnerRepository->findList(
-            $this->getUser()->getUuid(),
+            $AuthenticatedAdminPartnerUuid->toString(),
             $partnerRepository->getQueryBuilder(),
             $paginationData,
             true
