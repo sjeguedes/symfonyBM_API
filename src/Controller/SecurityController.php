@@ -76,13 +76,13 @@ class SecurityController extends AbstractController
      *     ref="#/components/responses/jwt_unauthorized"
      * )
      *
-     * @return JsonResponse
+     * @return void
      *
      * @Route({
      *     "en": "/login/check"
      * }, name="lexik_login_check", methods={"POST"})
      */
-    public function getJWT(): JsonResponse
+    public function getJWT(): void
     {
         // This code is not reached!
     }

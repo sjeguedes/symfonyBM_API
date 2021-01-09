@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Controller;
 
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\EntityManagerInterface;
+use Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -41,6 +41,11 @@ abstract class AbstractControllerTest extends WebTestCase
      * @var EntityManager
      */
     protected $entityManager;
+
+    /**
+     * @var Logger
+     */
+    protected $logger;
 
     /**
      * Initialize necessary data before each test.
@@ -118,11 +123,12 @@ abstract class AbstractControllerTest extends WebTestCase
      */
     protected function tearDown(): void
     {
-        try {
-            $this->entityManager->rollback();
-            $this->entityManager->close();
-        } catch(\Exception $e) {
-            echo 'No transactions to rollback! ' . $e->getMessage();
+        // Avoid error with database transactions
+        if (null !== $dbConnection = $this->entityManager->getConnection()) {
+            if ($dbConnection->isTransactionActive()) {
+                $this->entityManager->rollback();
+            }
+            $dbConnection->close();
         }
         $this->entityManager = null;
         $this->client = null;
