@@ -10,7 +10,6 @@ use App\Entity\Phone;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
-use Nelmio\ApiDocBundle\Annotation as ApiDoc;
 use OpenApi\Annotations as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;

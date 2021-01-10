@@ -55,7 +55,7 @@ class ClientControllerTest extends AbstractControllerTest
     }
 
     /**
-     * Provide controller URIs with corresponding HTTP method.
+     * Provide wrong controller URIs with corresponding HTTP method.
      *
      * @return array
      */
