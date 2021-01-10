@@ -166,9 +166,11 @@ class AdminOfferController extends AbstractAPIController
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $offerRepository = $this->getDoctrine()->getRepository(Offer::class);
+        /** @var UuidInterface $AuthenticatedAdminPartnerUuid */
+        $AuthenticatedAdminPartnerUuid = $this->getUser()->getUuid();
         // Get complete list with possible paginated results
         $offers = $offerRepository->findList(
-            $this->getUser()->getUuid(),
+            $AuthenticatedAdminPartnerUuid->toString(),
             $offerRepository->getQueryBuilder(),
             $paginationData
         );
@@ -450,11 +452,11 @@ class AdminOfferController extends AbstractAPIController
     ): JsonResponse {
         $paginationData = $requestHandler->filterPaginationData($request);
         $offerRepository = $this->getDoctrine()->getRepository(Offer::class);
-        /** @var UuidInterface $adminUserUuid */
-        $adminUserUuid = $this->getUser()->getUuid();
+        /** @var UuidInterface $AuthenticatedAdminPartnerUuid */
+        $AuthenticatedAdminPartnerUuid = $this->getUser()->getUuid();
         // Find a set of Offer entities with possible paginated results
         $offers = $offerRepository->findListByPhone(
-            $adminUserUuid->toString(),
+            $AuthenticatedAdminPartnerUuid->toString(),
             $phone->getUuid()->toString(),
             $paginationData
         );

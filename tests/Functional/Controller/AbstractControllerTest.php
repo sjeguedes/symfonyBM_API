@@ -24,7 +24,7 @@ abstract class AbstractControllerTest extends WebTestCase
      */
     protected const DEFAULT_CREDENTIALS = [
         'admin'    => ['email' => 'business-4h96@roussel-sasu.fr', 'password' => 'pass_11'],
-        'consumer' => ['email' => 'business-6h69@colas-sas.com', 'password'  => 'pass_25'],
+        'consumer' => ['email' => 'business-6h69@colas-sas.com', 'password'   => 'pass_25'],
     ];
 
     /**
