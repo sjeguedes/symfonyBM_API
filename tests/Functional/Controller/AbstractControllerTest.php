@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Controller;
 
 use Doctrine\ORM\EntityManager;
-use Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -43,11 +42,6 @@ abstract class AbstractControllerTest extends WebTestCase
     protected $entityManager;
 
     /**
-     * @var Logger
-     */
-    protected $logger;
-
-    /**
      * Initialize necessary data before each test.
      *
      * @return void
@@ -56,10 +50,14 @@ abstract class AbstractControllerTest extends WebTestCase
     {
         parent::setup();
         $this->client = static::createClient();
+        // IMPORTANT: disable kernel reboot for multiple requests to avoid any issue with transactions
+        $this->client->disableReboot();
         $this->apiPathPrefix = $this->client->getContainer()->getParameter('api_and_version_path_prefix');
+        // Configure correctly API URI prefix with HTTP host
         $this->client->setServerParameter('HTTP_HOST', 'localhost/' . $this->apiPathPrefix);
-        $this->entityManager = $this->client->getContainer()->get('doctrine.orm.entity_manager');
-        $this->entityManager->beginTransaction();
+        // Use default entity manager
+        $this->entityManager = $this->client->getContainer()->get('doctrine.orm.default_entity_manager');
+         $this->entityManager->getConnection()->beginTransaction();
         // Initialize a client with default authenticated consumer
         $this->initDefaultAuthenticatedClient();
     }
@@ -120,13 +118,15 @@ abstract class AbstractControllerTest extends WebTestCase
      * Reset necessary data after each test.
      *
      * @return void
+     *
+     * @throws \Doctrine\DBAL\ConnectionException
      */
     protected function tearDown(): void
     {
         // Avoid error with database transactions
         if (null !== $dbConnection = $this->entityManager->getConnection()) {
             if ($dbConnection->isTransactionActive()) {
-                $this->entityManager->rollback();
+                $dbConnection->rollBack();
             }
             $dbConnection->close();
         }

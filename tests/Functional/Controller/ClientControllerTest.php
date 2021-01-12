@@ -19,7 +19,7 @@ class ClientControllerTest extends AbstractControllerTest
      */
     private const DEFAULT_DATA = [
         'admin'    => ['client_uuid' => 'af6d57b5-ba0d-39d1-ba1a-4c17a14f6ba8'],
-        'consumer' => ['client_uuid' => '1c8567f4-bee1-376a-8b57-2567b6c9ed5e']
+        'consumer' => ['client_uuid' => '8ab072d0-52c5-3280-90a8-24e975033d24']
     ];
 
     /**
@@ -168,7 +168,7 @@ class ClientControllerTest extends AbstractControllerTest
             'Wrong query filter value as "null" for "per_page"'                 => ['data' => ['per_page', null]],
             'Wrong query filter value as "negative int" for "per_page"'         => ['data' => ['per_page', -1]],
             'Wrong query filter value with "unexpected string" for "full_list"' => ['data' => ['full_list','unexpected value']],
-            'Wrong query filter value with "unexpected int" for "per_page"'     => ['data' => ['full_list', 1]]
+            'Wrong query filter value with "unexpected int" for "full_list"'    => ['data' => ['full_list', 1]]
         ];
     }
 
@@ -221,7 +221,7 @@ class ClientControllerTest extends AbstractControllerTest
         static::assertTrue($this->client->getResponse()->isSuccessful());
         // Check HAL HATEOAS response content type
         static::assertResponseHeaderSame('Content-Type', 'application/hal+json');
-        // Check that default authenticated consumer (partner) has exactly 1 client!
+        // Check that default authenticated consumer (partner) has exactly 2 client!
         $content = json_decode($this->client->getResponse()->getContent(), true);
         static::assertArrayHasKey('clients', $content['_embedded']);
         static::assertCount(2, $content['_embedded']['clients']);
@@ -402,9 +402,8 @@ class ClientControllerTest extends AbstractControllerTest
      */
     public function testConsumerCanDeleteAClient(): void
     {
-        // Call repository to get data for client created before in test in order to delete it here!
-        $lastCreatedClientEntity = $this->clientRepository->findOneBy(['email' => 'info-25u2@duchemin-sarl.com']);
-        $this->client->request('DELETE','/clients/' . $lastCreatedClientEntity->getUuid()->toString());
+        // Use default client uuid in order to delete it here!
+        $this->client->request('DELETE','/clients/' . self::DEFAULT_DATA['consumer']['client_uuid']);
         // Check empty response
         static::assertEmpty($this->client->getResponse()->getContent());
         static::assertResponseNotHasHeader('Content-Type');
@@ -420,11 +419,25 @@ class ClientControllerTest extends AbstractControllerTest
     {
         // Authenticate an admin client
         $this->initDefaultAuthenticatedClient(true);
-        // Call repository to get data for client created before in test in order to delete it here!
-        $lastCreatedClientEntity = $this->clientRepository->findOneBy(['email' => 'dupont-a743@gmail.com']);
-        $clientUuid = $lastCreatedClientEntity->getUuid()->toString();
-        // Use consumer client uuid
-        $this->client->request('DELETE','/clients/' . $clientUuid);
+        // Use consumer client uuid in order to delete it here!
+        $this->client->request('DELETE','/clients/' . self::DEFAULT_DATA['consumer']['client_uuid']);
+        // Check empty response
+        static::assertEmpty($this->client->getResponse()->getContent());
+        static::assertResponseNotHasHeader('Content-Type');
+        static::assertResponseStatusCodeSame(204);
+    }
+
+    /**
+     * Test that an admin can also delete one of his client.
+     *
+     * @return void
+     */
+    public function testAdminCanDeleteOneOfHisClient(): void
+    {
+        // Authenticate an admin client
+        $this->initDefaultAuthenticatedClient(true);
+        // Use default admin client uuid in order to delete it here!
+        $this->client->request('DELETE','/clients/' . self::DEFAULT_DATA['admin']['client_uuid']);
         // Check empty response
         static::assertEmpty($this->client->getResponse()->getContent());
         static::assertResponseNotHasHeader('Content-Type');
@@ -450,6 +463,8 @@ class ClientControllerTest extends AbstractControllerTest
      * Reset necessary data after each test.
      *
      * @return void
+     *
+     * @throws \Doctrine\DBAL\ConnectionException
      */
     public function tearDown(): void
     {

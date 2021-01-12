@@ -63,7 +63,7 @@ class PhoneControllerTest extends AbstractControllerTest
         static::assertTrue($this->client->getResponse()->isSuccessful());
         // Check HAL HATEOAS response content type
         static::assertResponseHeaderSame('Content-Type', 'application/hal+json');
-        // Check that default authenticated consumer (partner) has exactly 1 phone!
+        // Check that default authenticated consumer (partner) has exactly 2 phones!
         $content = json_decode($this->client->getResponse()->getContent(), true);
         static::assertArrayHasKey('phones', $content['_embedded']);
         static::assertCount(2, $content['_embedded']['phones']);

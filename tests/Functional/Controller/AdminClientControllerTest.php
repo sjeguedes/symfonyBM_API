@@ -20,7 +20,7 @@ class AdminClientControllerTest extends AbstractControllerTest
     private const DEFAULT_DATA = [
         'consumer' => [
             'uuid'        => '14da0978-5078-399d-885c-263bdaacc6f3',
-            'client_uuid' => '1c8567f4-bee1-376a-8b57-2567b6c9ed5e'
+            'client_uuid' => '8ab072d0-52c5-3280-90a8-24e975033d24'
         ],
         'another_consumer' => [ // direction-421c@georges-scop.fr
             'uuid'        => 'c7570c62-4114-3551-988f-bc46be9e2c6c',
@@ -247,12 +247,12 @@ class AdminClientControllerTest extends AbstractControllerTest
     {
         // Authenticate an admin client
         $this->initDefaultAuthenticatedClient(true);
-        // Call repository to get data for client created before in test in order to delete it here!
-        $lastCreatedClientEntity = $this->clientRepository->findOneBy(['email' => $data['email']]);
-        $clientUuid = $lastCreatedClientEntity->getUuid()->toString();
+        // Use consumer uuid and one associated client uuid in order to delete it here!
+        $consumerUuid = self::DEFAULT_DATA['consumer']['uuid'];
+        $consumerClientUuid = self::DEFAULT_DATA['consumer']['client_uuid'];
         $this->client->request(
             'DELETE',
-            '/admin/partners/' . self::DEFAULT_DATA['consumer']['uuid'] . '/clients/' . $clientUuid
+            '/admin/partners/' . $consumerUuid . '/clients/' . $consumerClientUuid
         );
         // Check empty response
         static::assertEmpty($this->client->getResponse()->getContent());
@@ -270,10 +270,11 @@ class AdminClientControllerTest extends AbstractControllerTest
         // Authenticate an admin client
         $this->initDefaultAuthenticatedClient(true);
         // Use another partner client uuid to throw an exception
+        $consumerUuid = self::DEFAULT_DATA['consumer']['uuid'];
         $anotherConsumerClientUuid = self::DEFAULT_DATA['another_consumer']['client_uuid'];
         $this->client->request(
             'DELETE',
-            '/admin/partners/' . self::DEFAULT_DATA['consumer']['uuid'] . '/clients/' . $anotherConsumerClientUuid
+            '/admin/partners/' . $consumerUuid . '/clients/' . $anotherConsumerClientUuid
         );
         static::assertJson($this->client->getResponse()->getContent());
         static::assertResponseHeaderSame('Content-Type', 'application/problem+json');
@@ -287,6 +288,8 @@ class AdminClientControllerTest extends AbstractControllerTest
      * Reset necessary data after each test.
      *
      * @return void
+     *
+     * @throws \Doctrine\DBAL\ConnectionException
      */
     public function tearDown(): void
     {
