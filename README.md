@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/sjeguedes/symfonyBM_API.svg?branch=master)](https://travis-ci.com/sjeguedes/symfonyBM_API)
 [![Maintainability](https://api.codeclimate.com/v1/badges/75815a8684536816ebff/maintainability)](https://codeclimate.com/github/sjeguedes/symfonyBM_API/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/75815a8684536816ebff/test_coverage)](https://codeclimate.com/github/sjeguedes/symfonyBM_API/test_coverage)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/34e88a3a8f0649e3b951f8c3aea6a443)](https://www.codacy.com/gh/sjeguedes/symfonyBM_API/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=sjeguedes/symfonyBM_API&amp;utm_campaign=Badge_Grade)
