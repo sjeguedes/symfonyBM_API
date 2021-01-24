@@ -7,7 +7,7 @@ warnings_are_errors: false
 services:
     - mysql
 php:
-    - 7.2
+    - 7.4
 env:
     global:
         - CC_TEST_REPORTER_ID=$CC_TR_ID
@@ -22,7 +22,7 @@ before_script:
     - ./cc-test-reporter before-build
     # Enable code coverage for xdebug
     # https://docs.travis-ci.com/user/languages/php/
-    - echo 'xdebug.mode = "coverage"' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
+    - echo 'xdebug.mode="coverage"' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
 before_install:
     # Copy content from .env.travis to .env.test
     - cp .env.travis .env.test
