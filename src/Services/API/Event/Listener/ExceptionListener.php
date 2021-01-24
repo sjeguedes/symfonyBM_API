@@ -84,7 +84,6 @@ final class ExceptionListener
                 }
                 break;
             default:
-                dump($exception);
                 $message = 'Unknown or unexpected error: please contact us if necessary!';
         }
         return [

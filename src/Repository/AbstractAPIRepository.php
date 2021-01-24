@@ -114,10 +114,10 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
         ?array $paginationData,
         bool $isFullListAllowed = false
     ): \IteratorAggregate {
-        $page = $paginationData['page'];
-        $limit = $paginationData['per_page'];
+        $page = $paginationData['page'] ?? null;
+        $limit = $paginationData['per_page'] ?? null;
         $firstResult = !\is_null($page) ? ($page - 1) * $limit : null;
-        $maxResults = $limit ?? null;
+        $maxResults = $limit;
         // Prepare data for cache and query
         if (\is_null($firstResult)) {
             $listIdentifier = self::CACHE_KEY_LIST_PREFIX . 'without_pagination_';
@@ -203,7 +203,7 @@ abstract class AbstractAPIRepository extends ServiceEntityRepository
             ];
         });
         // Failure state: no result was found!
-        if (0 === count($data['selectedItems'])) {
+        if (isset($data['selectedItems']) && empty($data['selectedItems'])) {
             $this->cache->delete($cacheKey);
             throw new BadRequestHttpException(sprintf('No %s list result found', lcfirst($listType)));
         }
