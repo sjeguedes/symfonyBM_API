@@ -1,3 +1,5 @@
 sensio_framework_extra:
     router:
-        annotations: true
+        # Deprecated router annotations must be set to "false"
+        # https://nebkam.medium.com/symfony-deprecated-route-and-method-annotations-4d5e1d34556a
+        annotations: false
