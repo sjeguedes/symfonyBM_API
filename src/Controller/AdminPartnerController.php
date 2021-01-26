@@ -33,10 +33,6 @@ use Symfony\Component\Routing\Annotation\Route;
  *     ref="#/components/responses/unauthorized"
  * )
  * @OA\Response(
- *     response=403,
- *     ref="#/components/responses/forbidden"
- * )
- * @OA\Response(
  *     response=404,
  *     ref="#/components/responses/not_found"
  * )
