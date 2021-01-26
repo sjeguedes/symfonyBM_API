@@ -36,10 +36,6 @@ use Symfony\Component\Security\Core\User\UserInterface;
  *     ref="#/components/responses/unauthorized"
  * )
  * @OA\Response(
- *     response=403,
- *     ref="#/components/responses/forbidden"
- * )
- * @OA\Response(
  *     response=404,
  *     ref="#/components/responses/not_found"
  * )
@@ -141,6 +137,10 @@ class ClientController extends AbstractAPIController
      *          header="Vary",
      *          ref="#/components/headers/vary"
      *    )
+     * )
+     * @OA\Response(
+     *     response=403,
+     *     ref="#/components/responses/forbidden"
      * )
      *
      * @param FilterRequestHandler  $requestHandler
@@ -266,6 +266,10 @@ class ClientController extends AbstractAPIController
      *          header="Vary",
      *          ref="#/components/headers/vary"
      *    )
+     * )
+     * @OA\Response(
+     *     response=403,
+     *     ref="#/components/responses/forbidden"
      * )
      *
      * @param Client    $client
@@ -453,6 +457,10 @@ class ClientController extends AbstractAPIController
      *              example="Empty response returned"
      *          )
      *     )
+     * )
+     * @OA\Response(
+     *     response=403,
+     *     ref="#/components/responses/forbidden"
      * )
      *
      * @param Client $client
