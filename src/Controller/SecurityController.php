@@ -133,6 +133,6 @@ class SecurityController extends AbstractController
     {
         // Return the same response as "Gesdinet\JWTRefreshTokenBundle\Service\RefreshToken::refresh" method
         // with forwarding shortcut and service id using single ":"!
-        return $this->forward('gesdinet.jwtrefreshtoken:refresh');
+        return $this->forward('gesdinet.jwtrefreshtoken::refresh');
     }
 }

@@ -144,7 +144,7 @@
         ]
     },
     "monolog/monolog": {
-        "version": "1.25.5"
+        "version": "2.2.0"
     },
     "namshi/jose": {
         "version": "7.2.3"
@@ -352,7 +352,7 @@
         }
     },
     "symfony/monolog-bridge": {
-        "version": "v4.4.16"
+        "version": "v5.2.1"
     },
     "symfony/monolog-bundle": {
         "version": "3.3",
