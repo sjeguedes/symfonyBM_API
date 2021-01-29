@@ -44,6 +44,14 @@ $ git clone https://github.com/sjeguedes/symfonyBM_API.git
 ```
 
 #### 2. Configure particular project needed data and your own database parameters with environment variables in `env.local` file using `.env` provided example file:
+
+###### *Generate the JWT SSL keys to validate a token.*
+```
+$ mkdir -p your_path_to_keys
+$ openssl genpkey -out your_path_to_keys/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096
+$ openssl pkey -in your_path_to_keys/private.pem -out your_path_to_keys/public.pem -pubout
+```
+
 ###### *Prefer use a `env.<your_environment>.local` file per environment combined to `env.local.php` to manage each environment.*
 ```
 # API application environnement and secret
@@ -54,8 +62,8 @@ APP_SECRET=your_secret
 DATABASE_URL=mysql://db_user:db_password@127.0.0.1:3306/db_name?serverVersion=5.7
 
 # API JWT Authentication paths configuration to public and private key and also passphrase
-JWT_SECRET_KEY=%kernel.project_dir%/your_path_to_private_key/private.pem
-JWT_PUBLIC_KEY=%kernel.project_dir%/your_path_to_private_key/public.pem
+JWT_SECRET_KEY=%kernel.project_dir%/your_path_to_keys/private.pem
+JWT_PUBLIC_KEY=%kernel.project_dir%/your_path_to_keys/public.pem
 JWT_PASSPHRASE=your_custom_passphrase
 
 # API custom domain to make OpenAPI documentation work:
