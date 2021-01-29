@@ -156,10 +156,14 @@ class Client
 
     /**
      * Client constructor.
+     *
+     * @param UuidInterface|null $uuid
+     *
+     * @throws \Exception
      */
-    public function __construct()
+    public function __construct(UuidInterface $uuid = null)
     {
-        $this->uuid = Uuid::uuid4();
+        $this->uuid = $uuid ?? Uuid::uuid4();
         $this->creationDate = new \DateTimeImmutable();
         $this->updateDate = new \DateTimeImmutable();
     }
@@ -179,16 +183,20 @@ class Client
             new UniqueEntity([
                 'fields' => 'email'
         ]))
-        ->addPropertyConstraint('name',
-            new Assert\NotBlank()
-        )
-        ->addPropertyConstraint('email',
-            new Assert\Email()
-        )
-        ->addPropertyConstraint('type',
+        ->addPropertyConstraints('name', [
+            new Assert\NotBlank(),
+            new Assert\NotNull()
+        ])
+        ->addPropertyConstraints('email', [
+            new Assert\Email(),
+            new Assert\NotNull()
+        ])
+        ->addPropertyConstraints('type', [
             new Assert\Choice([
                 'choices' => self::CLIENT_TYPES
-        ]))
+            ]),
+            new Assert\NotNull()
+        ])
         ->addPropertyConstraint('partner',
             new  Assert\Valid()
         );

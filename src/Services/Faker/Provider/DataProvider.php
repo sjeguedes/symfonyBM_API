@@ -174,18 +174,12 @@ final class DataProvider extends BaseProvider
      * @param int $phoneBrandIndex
      * @param int $phoneModelIndex
      *
-     * @return string
+     * @return float
      */
-    public function customPhonePrice(int $phoneBrandIndex, int $phoneModelIndex): string
+    public function customPhonePrice(int $phoneBrandIndex, int $phoneModelIndex): float
     {
-        // Get price english notation to be return as string
-        return number_format(
-            // float value
-            self::PHONE_PRICES['references'][$phoneBrandIndex][$phoneModelIndex],
-            2,
-            '.',
-            ''
-        );
+        // Get price
+        return self::PHONE_PRICES['references'][$phoneBrandIndex][$phoneModelIndex];
     }
 
     /**
@@ -194,6 +188,8 @@ final class DataProvider extends BaseProvider
      * @param string $phoneType)
      *
      * @return string
+     *
+     * @throws \Exception
      */
     public function customPhoneStorage(string $phoneType): string
     {
@@ -208,20 +204,24 @@ final class DataProvider extends BaseProvider
                 return DataProvider::PHONE_STORAGE_REFERENCES[3]; // 256Go
             case Phone::PHONE_TYPES[0]: // Premium
                 return DataProvider::PHONE_STORAGE_REFERENCES[4]; // 512Mo
+            default:
+                throw new \RuntimeException('Phone storage not found');
         }
     }
 
     /**
      * Get phone custom fake type with price.
      *
-     * @param string $phonePrice
+     * @param float $phonePrice
      *
      * @return string
+     *
+     * @throws \Exception
      */
-    public function customPhoneType(string $phonePrice): string
+    public function customPhoneType(float $phonePrice): string
     {
         // Get integer value to compare price
-        $phonePrice = (int) bcmul($phonePrice, '100');
+        $phonePrice = $phonePrice * 100;
         switch ($phonePrice) {
             case 0 < $phonePrice && $phonePrice < 20000:
                 return Phone::PHONE_TYPES[4]; // Petit prix
@@ -233,6 +233,8 @@ final class DataProvider extends BaseProvider
                 return Phone::PHONE_TYPES[1]; // Exclusivité
             case 80000 <= $phonePrice:
                 return Phone::PHONE_TYPES[0]; // Premium
+            default:
+                throw new \RuntimeException('Phone type not found');
         }
     }
 

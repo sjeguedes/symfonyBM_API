@@ -7,6 +7,7 @@ namespace App\DataFixtures;
 use App\Services\Faker\Provider\DataProvider;
 use App\Entity\Phone;
 use Doctrine\Persistence\ObjectManager;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Class PhoneFixtures
@@ -45,8 +46,8 @@ class PhoneFixtures extends BaseFixture
                 $phoneStorage = $this->getCustomFakerProvider()->customPhoneStorage($phoneType);
                 // Adjust phone model with phone storage
                 $phoneModel = $phoneModel  . ' ' . $phoneStorage;
-                $Phone = new Phone();
-                return $Phone
+                $phone = new Phone(Uuid::fromString($this->faker->uuid));
+                return $phone
                     ->setCreationDate(new \DateTimeImmutable(sprintf("+%d days", -$i)))
                     ->setUpdateDate(new \DateTimeImmutable(sprintf("+%d days", -$i)))
                     ->setType($phoneType)

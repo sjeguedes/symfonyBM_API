@@ -30,7 +30,7 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
  * @see https://symfony.com/doc/current/components/cache.html
  * @see https://en.wikipedia.org/wiki/Cache_stampede
  */
-class DoctrineCacheConverter implements ParamConverterInterface
+final class DoctrineCacheConverter implements ParamConverterInterface
 {
     /**
      * Define corresponding entity to find depending on controller method argument entity name.

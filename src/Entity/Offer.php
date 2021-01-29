@@ -98,10 +98,14 @@ class Offer
 
     /**
      * Offer constructor.
+     *
+     * @param UuidInterface|null $uuid
+     *
+     * @throws \Exception
      */
-    public function __construct()
+    public function __construct(UuidInterface $uuid = null)
     {
-        $this->uuid = Uuid::uuid4();
+        $this->uuid = $uuid ?? Uuid::uuid4();
         $this->creationDate = new \DateTimeImmutable();
         // No need to have an update date since an offer deletion must be chosen if necessary!
     }

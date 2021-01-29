@@ -10,7 +10,6 @@ use App\Entity\Partner;
 use App\Services\API\Builder\ResponseBuilder;
 use App\Services\API\Handler\FilterRequestHandler;
 use App\Services\Hateoas\Representation\RepresentationBuilder;
-use Nelmio\ApiDocBundle\Annotation as ApiDoc;
 use OpenApi\Annotations as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
@@ -34,10 +33,6 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * @OA\Response(
  *     response=401,
  *     ref="#/components/responses/unauthorized"
- * )
- * @OA\Response(
- *     response=403,
- *     ref="#/components/responses/forbidden"
  * )
  * @OA\Response(
  *     response=404,
@@ -385,7 +380,7 @@ class AdminClientController extends AbstractAPIController
     {
         // Check coherent pair of associated entities
         if (!$partner->getClients()->contains($client)) {
-            throw new BadRequestHttpException('Selected Client to remove not associated to chosen Partner');
+            throw new BadRequestHttpException('Selected Client to remove unassociated to chosen Partner');
         }
         // Get partner to match client to remove and save deletion
         $partner->setUpdateDate(new \DateTimeImmutable())->removeClient($client);

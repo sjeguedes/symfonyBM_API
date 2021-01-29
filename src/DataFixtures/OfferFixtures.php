@@ -10,6 +10,7 @@ use App\Entity\Partner;
 use App\Entity\Phone;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Class OfferFixtures
@@ -48,7 +49,7 @@ class OfferFixtures extends BaseFixture implements DependentFixtureInterface
             // Get a phone entity reference
             /** @var object|Phone $phoneProxy */
             $phoneProxy = $this->getReference(Phone::class . '_' . array_rand(array_flip($phoneProxyIndexes)));
-            $offer = new Offer();
+            $offer = new Offer(Uuid::fromString($this->faker->uuid));
             return $offer
                 ->setCreationDate(new \DateTimeImmutable(sprintf("+%d days", -$i)))
                 ->setPartner($partnerProxy)

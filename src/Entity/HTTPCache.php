@@ -112,11 +112,13 @@ class HTTPCache
     /**
      * HTTPCache constructor.
      *
+     * @param UuidInterface|null $uuid
+     *
      * @throws \Exception
      */
-    public function __construct()
+    public function __construct(UuidInterface $uuid = null)
     {
-        $this->uuid = Uuid::uuid4();
+        $this->uuid = $uuid ?? Uuid::uuid4();
         $this->creationDate = new \DateTimeImmutable();
         // Last-Modified (to use with date format specification)
         $this->updateDate = new \DateTimeImmutable();

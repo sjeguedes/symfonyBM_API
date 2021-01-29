@@ -124,7 +124,7 @@ class Phone
     private $description;
 
     /**
-     * @var string|null
+     * @var float|null
      *
      * A public price dedicated to clients
      *
@@ -170,10 +170,14 @@ class Phone
 
     /**
      * Phone constructor.
+     *
+     * @param UuidInterface|null $uuid
+     *
+     * @throws \Exception
      */
-    public function __construct()
+    public function __construct(UuidInterface $uuid = null)
     {
-        $this->uuid = Uuid::uuid4();
+        $this->uuid = $uuid ?? Uuid::uuid4();
         $this->creationDate = new \DateTimeImmutable();
         $this->updateDate = new \DateTimeImmutable();
         $this->offers = new ArrayCollection();
@@ -330,19 +334,19 @@ class Phone
     }
 
     /**
-     * @return string|null
+     * @return float|null
      */
-    public function getPrice(): ?string
+    public function getPrice(): ?float
     {
         return $this->price;
     }
 
     /**
-     * @param string $price
+     * @param float $price
      *
      * @return $this
      */
-    public function setPrice(string $price): self
+    public function setPrice(float $price): self
     {
         $this->price = $price;
 

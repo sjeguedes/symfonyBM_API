@@ -30,12 +30,12 @@ security:
             stateless: true
             anonymous: true
         api_admin_doc: # ^/api/v1/administrator/doc or ^/api/v1/specification/administrator/
-            pattern: '^/api/v\d+/(administrator/doc)|(specification/administrator)$'
-            security: false
+            pattern: '^/api/v\d+/(administrator/doc)|(specification/administrator)'
+            anonymous: true
         ## IMPORTANT: a redirection is made from "/api/v1/doc" or "/api/v1/default/doc" to "/api/v1/consumer/doc"!
         api_partner_doc: # ^/api/v1/consumer/doc or ^/api/v1/specification/consumer/
-            pattern: '^/api/v\d+/(default|consumer/doc)|(specification/default|consumer)$'
-            security: false
+            pattern: '^/api/v\d+/(default|consumer/doc)|(specification/default|consumer)'
+            anonymous: true
         api: # ^/api/v1
             pattern: '^/api/v\d+'
             stateless: true
@@ -46,7 +46,8 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
         main:
-            anonymous: lazy
+            anonymous: true
+            lazy: true
 
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#firewalls-authentication
@@ -57,8 +58,8 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        - { path: '^/api/v\d+/(default|consumer/doc)|(specification/default|consumer)$', roles: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: '^/api/v\d+/(administrator/doc)|(specification/administrator)$', roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: '^/api/v\d+/(default|consumer/doc)|(specification/default|consumer)', roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: '^/api/v\d+/(administrator/doc)|(specification/administrator)', roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: '^/api/v\d+/login/check$', roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: '^/api/v\d+/token/refresh$', roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: '^/api/v\d+', roles: IS_AUTHENTICATED_FULLY }

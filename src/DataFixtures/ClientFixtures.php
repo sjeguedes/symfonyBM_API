@@ -9,6 +9,8 @@ use App\Entity\Client;
 use App\Entity\Partner;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * Class ClientFixtures
@@ -50,7 +52,7 @@ class ClientFixtures extends BaseFixture implements DependentFixtureInterface
             // Get corresponding partner email created with random company department
             $unique = '-' . substr(md5(uniqid()), 0, 4);
             $clientEmail = $this->getCustomFakerProvider()->customSanitizedString($clientName) . $unique . '@' . $this->faker->freeEmailDomain;
-            $client = new Client();
+            $client = new Client(Uuid::fromString($this->faker->uuid));
             return $client
                 ->setCreationDate(new \DateTimeImmutable(sprintf("+%d days", -$i)))
                 ->setUpdateDate(new \DateTimeImmutable(sprintf("+%d days", -$i)))

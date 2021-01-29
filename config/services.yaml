@@ -55,6 +55,11 @@ services:
         tags:
             - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
 
+    # add response listener
+    App\Services\API\Event\Listener\ResponseListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.response, method: onKernelResponse }
+
     # add custom param converter to manage Doctrine cache for GET query and result for a single entity
     App\Services\API\ParamConverter\DoctrineCacheConverter:
         tags:

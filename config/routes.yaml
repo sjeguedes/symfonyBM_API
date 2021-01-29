@@ -1,4 +1,9 @@
-# Lexik Partner login check route defined in SecurityController to add API documentation
+# "Lexik" bundle Partner login check route is defined in SecurityController to add API documentation with annotation !
 #lexik_login_check:
     #path: '/%api_and_version_path_prefix%/login/check' # e.g. /api/v1/login/check
     #methods: [POST]
+
+# "Gesdinet" bundle Partner refresh token route is defined in SecurityController to add API documentation with annotation !
+#gesdinet_jwt_refresh_token:
+    #path: '/%api_and_version_path_prefix%/token/refresh' # e.g. /api/v1/token/refresh
+    #controller: gesdinet.jwtrefreshtoken::refresh
