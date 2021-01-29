@@ -36,9 +36,12 @@ install:
     - php bin/console cache:clear -n --env=test
     - php bin/console doctrine:fixtures:load -n --env=test
 script:
-    - php bin/phpunit --coverage-text --colors
+    - "php bin/phpunit --coverage-text --colors --coverage-clover build/logs/clover.xml"
 after_script:
-    - ./cc-test-reporter after-build -t lcov --debug --exit-code $TRAVIS_TEST_RESULT
+    # https://dev.to/acho_arnold/php-test-coverage-with-travis-ci-and-code-climate-using-clover-eih
+    # https://ocramius.github.io/blog/automated-code-coverage-check-for-github-pull-requests-with-travis/
+    - ./cc-test-reporter after-build -t clover --debug --exit-code $TRAVIS_TEST_RESULT
+
 # No notification about build state
 notifications:
     email: false
