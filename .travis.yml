@@ -3,6 +3,7 @@ cache:
     directories:
         - $HOME/.composer/cache
         - $HOME/symfony-bridge/.phpunit
+        - $HOME/.cache/codacy
 warnings_are_errors: false
 services:
     - mysql
@@ -14,18 +15,22 @@ env:
         - JWT_PASSPHRASE=$JWT_KEY_PASS
 before_script:
     - sudo mkdir -p config/jwt
-    - sudo openssl genrsa -passout pass:$JWT_KEY_PASS -out config/jwt/private-test.pem -aes256 4096
-    - sudo openssl rsa -passin pass:$JWT_KEY_PASS -pubout -in config/jwt/private-test.pem -out config/jwt/public-test.pem
+    - sudo openssl genrsa -passout pass:$JWT_PASSPHRASE -out config/jwt/private-test.pem -aes256 4096
+    - sudo openssl rsa -passin pass:$JWT_PASSPHRASE -pubout -in config/jwt/private-test.pem -out config/jwt/public-test.pem
     # Add Code Climate test reporter to get test coverage
     - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
     - chmod +x ./cc-test-reporter
     - ./cc-test-reporter before-build
     # Enable code coverage for xdebug
     # https://docs.travis-ci.com/user/languages/php/
-    - echo 'xdebug.mode="coverage"' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
+    - echo "xdebug.mode='coverage'" >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
 before_install:
     # Copy content from .env.travis to .env.test
     - cp .env.travis .env.test
+    # Add Codacy code coverage install
+    # https://docs.codacy.com/coverage-reporter/alternative-ways-of-running-coverage-reporter/#travis-ci
+    - sudo apt-get install jq
+    - curl -LSs "$(curl -LSs https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets | map({name, browser_download_url} | select(.name | endswith(".jar"))) | .[0].browser_download_url')" -o codacy-coverage-reporter-assembly.jar
 install:
     - composer self-update
     - composer install --prefer-dist --no-interaction --ignore-platform-reqs
@@ -41,7 +46,9 @@ after_script:
     # https://dev.to/acho_arnold/php-test-coverage-with-travis-ci-and-code-climate-using-clover-eih
     # https://ocramius.github.io/blog/automated-code-coverage-check-for-github-pull-requests-with-travis/
     - ./cc-test-reporter after-build -t clover --debug --exit-code $TRAVIS_TEST_RESULT
-
+after_success:
+    # Add Codacy code coverage report
+    - java -jar codacy-coverage-reporter-assembly.jar report -t $CODACY_PROJECT_TOKEN -l Java -r build/reports/jacoco/test/jacocoTestReport.xml
 # No notification about build state
 notifications:
     email: false

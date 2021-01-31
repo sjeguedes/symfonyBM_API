@@ -20,4 +20,6 @@
 .phpunit
 .phpunit.result.cache
 /phpunit.xml
+# exclude clover built logs
+/build
 ###< symfony/phpunit-bridge ###
